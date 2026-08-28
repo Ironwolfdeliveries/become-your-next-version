@@ -1,0 +1,3 @@
+import { InterestForm } from "@/components/forms"; import { PageHero } from "@/components/ui";
+export const metadata={title:"Early Access",description:"Register interest in the future BYNV platform and Architects membership."};
+export default function Early(){return <><PageHero eyebrow="Early access" title="Be there for the first build." copy="Register your interest in The Architects, product previews and thoughtful launch notes. No payment, no guaranteed launch date and no automatic enrolment."/><div className="content container"><h2>Request an invitation</h2><p>This Stage 1 form is a safe demonstration and does not transmit or store your email. Production will use confirmed opt-in and a clear unsubscribe path.</p><InterestForm /></div></>}

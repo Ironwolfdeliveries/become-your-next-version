@@ -1,0 +1,2 @@
+"use client";
+export default function ErrorPage({ reset }: { error: Error & { digest?: string }; reset: () => void }) { return <div className="container page-hero"><p className="eyebrow">Something went wrong</p><h1>This part of the blueprint needs another pass.</h1><p className="lede">Your information has not been submitted. Try the view again.</p><button type="button" className="button" onClick={reset}>Try again →</button></div> }

@@ -1,0 +1,2 @@
+import { Button } from "@/components/ui";
+export default function NotFound(){return <div className="container page-hero"><p className="eyebrow">404 · Off blueprint</p><h1>This page hasn’t been built.</h1><p className="lede">Return home or begin with the free reflection assessment.</p><div className="button-row"><Button href="/">Return home</Button><Button href="/assessment" secondary>Take assessment</Button></div></div>}
