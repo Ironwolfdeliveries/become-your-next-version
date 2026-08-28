@@ -1,0 +1,3 @@
+import { PageHero } from "@/components/ui"; import { resources } from "@/lib/data";
+export const metadata={title:"Resources & Journal",description:"Practical reflections and tools from BYNV."};
+export default function Journal(){return <><PageHero eyebrow="Resources & journal" title="Notes for a life under construction." copy="Practical prompts, considered ideas and tools to support your next deliberate iteration."/><section className="container cards">{resources.map(r=><article className="card" key={r.slug}><p className="eyebrow">{r.tag} · {r.read}</p><h2>{r.title}</h2><p>{r.summary}</p><p className="muted">Stage 1 editorial preview</p></article>)}</section></>}
