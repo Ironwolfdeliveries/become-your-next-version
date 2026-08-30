@@ -29,6 +29,8 @@ const pageContexts: Record<string, KaiPageContext> = {
   "/daily-focus": { title: "Daily Focus", purpose: "One saved priority, action, and reflection for today.", recommendation: { href: "/journal", label: "Open the journal" } },
   "/goals": { title: "Architect Goals", purpose: "Saved outcomes connected to the seven assessment domains.", recommendation: { href: "/architect-cycle", label: "Begin an Architect Cycle" } },
   "/challenges": { title: "Architect Challenges", purpose: "Focused, saved practices with transparent progress instead of artificial points.", recommendation: { href: "/daily-focus", label: "Set today’s focus" } },
+  "/community": { title: "Architect Community", purpose: "Private member Rooms for accountability, challenges, milestones, and domain conversations.", recommendation: { href: "/community/rooms/general", label: "Open the General Room" } },
+  "/community/profile": { title: "Community profile", purpose: "Member-controlled display identity and privacy settings for the Architect Community.", recommendation: { href: "/community", label: "Return to Community" } },
   "/architect-cycle": { title: "Architect Cycle", purpose: "A defined period for building and reviewing one focus.", recommendation: { href: "/daily-focus", label: "Set today’s action" } },
   "/progress": { title: "Progress", purpose: "Saved Snapshot, full-score, daily-action, and Architect Cycle history.", recommendation: { href: "/dashboard", label: "Return to dashboard" } },
   "/kai": { title: "Kai", purpose: "The current guided demo and the boundaries for the planned AI companion.", recommendation: { href: "/assessment", label: "Take the assessment" } },
@@ -50,6 +52,7 @@ const fallbackContext: KaiPageContext = {
 
 export function getKaiPageContext(pathname: string) {
   const normalizedPath = pathname !== "/" ? pathname.replace(/\/$/, "") : pathname;
+  if (normalizedPath.startsWith("/community/rooms/")) return pageContexts["/community"];
   return pageContexts[normalizedPath] ?? fallbackContext;
 }
 
