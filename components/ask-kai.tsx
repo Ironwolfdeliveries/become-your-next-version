@@ -45,7 +45,9 @@ export function AskKai() {
     event.preventDefault();
     if (!prompt.trim()) return;
 
-    setPreparedRequest(createKaiRequest(prompt, pathname, quickAction));
+    const request = createKaiRequest(prompt, pathname, quickAction);
+    // Keep the prepared payload local until an authenticated Kai backend adapter is connected.
+    setPreparedRequest(request);
   }
 
   return (
