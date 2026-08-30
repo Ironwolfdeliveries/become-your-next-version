@@ -25,5 +25,7 @@ export async function persistPendingVersionSnapshot(userId: string) {
     completed_at: new Date().toISOString(),
   }, { onConflict: "user_id,client_snapshot_id" });
   if (error) throw error;
+  sessionStorage.removeItem(SNAPSHOT_KEY);
+  sessionStorage.removeItem(SNAPSHOT_ID_KEY);
   return { saved: true, score: result.score };
 }
