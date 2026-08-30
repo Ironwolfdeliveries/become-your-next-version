@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { calculateScore, readAssessment } from "@/lib/services";
-import { Button } from "./ui";
+import { AuthForm } from "./auth-form";
 
 export function AccountEntry() {
   const [score, setScore] = useState<number | null>(null);
@@ -19,16 +19,17 @@ export function AccountEntry() {
   return (
     <section className="account-entry" aria-labelledby="account-entry-heading">
       <div className="account-entry-summary">
-        <p className="eyebrow">Your result is ready</p>
-        <h2 id="account-entry-heading">{score === null ? "Keep your BYNV journey moving." : `Version Score ${score} is ready to become your baseline.`}</h2>
-        <p>Secure account creation and permanent result storage are not available yet. Your assessment result has not been uploaded or saved to a BYNV account.</p>
+        <p className="eyebrow">Your Version Snapshot is ready</p>
+        <h2 id="account-entry-heading">{score === null ? "Create your Architect account." : `Your ${score}/100 Snapshot is ready to save.`}</h2>
+        <p>Create a secure account to preserve this introductory result, begin the deeper Architect Assessment, and build your personal baseline.</p>
+        <ul className="tick-list compact">
+          <li>Save the six area responses and score to your account</li>
+          <li>Resume the Architect Assessment across sessions</li>
+          <li>Turn deeper results into your first Blueprint</li>
+        </ul>
       </div>
       <div className="account-entry-actions">
-        <p>Join the early-access list to receive account availability updates. No account or saved profile will be created by this step.</p>
-        <div className="button-row">
-          <Button href="/early-access">Request early access</Button>
-          <Button href="/version-score" secondary>Return to my results</Button>
-        </div>
+        <AuthForm mode="signup" />
       </div>
     </section>
   );

@@ -10,7 +10,7 @@ import type { KaiQuickAction } from "@/lib/kai-context";
 export function AskKai() {
   const pathname = usePathname() || "/";
   const page = getKaiPageContext(pathname);
-  const isAssessment = pathname === "/assessment";
+  const isAssessment = pathname === "/assessment" || pathname === "/architect-assessment";
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [quickAction, setQuickAction] = useState<KaiQuickAction | null>(null);

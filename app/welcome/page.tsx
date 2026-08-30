@@ -1,0 +1,4 @@
+import { MemberWelcome } from "@/components/member-welcome";
+import { PageHero } from "@/components/ui";
+export const metadata = { title: "Welcome, Architect", description: "Begin your BYNV Architect onboarding." };
+export default function WelcomePage() { return <><PageHero eyebrow="Your BYNV starting point" title="Welcome, Architect." copy="Your secure account connects your Version Snapshot to the deeper work ahead." /><div className="container"><MemberWelcome /></div></>; }

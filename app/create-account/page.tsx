@@ -10,9 +10,9 @@ export default function CreateAccountPage() {
   return (
     <>
       <PageHero
-        eyebrow="Continue your journey"
-        title="Make this your starting point."
-        copy="A secure BYNV account will connect your Version Score to your personal Blueprint, Dashboard, progress tracking, and Kai coaching."
+        eyebrow="Save your Version Snapshot"
+        title="Create your Architect account."
+        copy="Securely save your preliminary Snapshot, then begin the deeper assessment that will shape your BYNV baseline and Blueprint."
       />
       <div className="container"><AccountEntry /></div>
     </>

@@ -18,10 +18,19 @@ const pageContexts: Record<string, KaiPageContext> = {
   "/framework": { title: "Architect Method", purpose: "The BYNV framework for reflection, direction, action and review.", recommendation: { href: "/assessment", label: "Apply it in the assessment" } },
   "/membership": { title: "Membership", purpose: "The planned Architects membership experience and its boundaries.", recommendation: { href: "/early-access", label: "Review early access" } },
   "/early-access": { title: "Early access", purpose: "The early-access interest form and what joining the list means.", recommendation: { href: "/membership", label: "Review membership" } },
-  "/assessment": { title: "Kai Assessment", purpose: "A six-question reflection used to calculate an indicative Version Score.", recommendation: { href: "/framework", label: "Review the Architect Method" } },
-  "/version-score": { title: "Version Score", purpose: "An indicative reflection snapshot based on the assessment responses.", recommendation: { href: "/dashboard", label: "See the dashboard preview" } },
-  "/create-account": { title: "Create your BYNV account", purpose: "The next step from a Version Score toward secure account access and saved progress.", recommendation: { href: "/early-access", label: "Request early access" } },
-  "/dashboard": { title: "Dashboard", purpose: "A preview of the tools that organize progress and next actions.", recommendation: { href: "/journal", label: "Open the journal" } },
+  "/assessment": { title: "Version Snapshot", purpose: "A six-question introductory reflection used to calculate a preliminary Version Score.", recommendation: { href: "/framework", label: "Review the Architect Method" } },
+  "/version-score": { title: "Version Snapshot results", purpose: "A preliminary reflection signal based on six Snapshot responses.", recommendation: { href: "/create-account", label: "Save your Version Snapshot" } },
+  "/create-account": { title: "Create your BYNV account", purpose: "Secure account creation and Version Snapshot continuation.", recommendation: { href: "/sign-in", label: "Sign in instead" } },
+  "/sign-in": { title: "Sign in", purpose: "Secure access for returning BYNV Architects.", recommendation: { href: "/create-account", label: "Create an account" } },
+  "/welcome": { title: "Architect welcome", purpose: "The start of secure member onboarding after account creation.", recommendation: { href: "/architect-assessment", label: "Begin the Architect Assessment" } },
+  "/architect-assessment": { title: "Architect Assessment", purpose: "A deeper seven-section baseline that autosaves to the member account.", recommendation: { href: "/dashboard", label: "Save and return later" } },
+  "/blueprint": { title: "Architect Blueprint", purpose: "A deterministic starting plan derived from the completed Architect Assessment.", recommendation: { href: "/daily-focus", label: "Set today’s focus" } },
+  "/dashboard": { title: "Architect Dashboard", purpose: "The member’s saved assessment, Blueprint, daily focus, and progress hub.", recommendation: { href: "/daily-focus", label: "Open Daily Focus" } },
+  "/daily-focus": { title: "Daily Focus", purpose: "One saved priority, action, and reflection for today.", recommendation: { href: "/journal", label: "Open the journal" } },
+  "/goals": { title: "Architect Goals", purpose: "Saved outcomes connected to the seven assessment domains.", recommendation: { href: "/architect-cycle", label: "Begin an Architect Cycle" } },
+  "/challenges": { title: "Architect Challenges", purpose: "Focused, saved practices with transparent progress instead of artificial points.", recommendation: { href: "/daily-focus", label: "Set today’s focus" } },
+  "/architect-cycle": { title: "Architect Cycle", purpose: "A defined period for building and reviewing one focus.", recommendation: { href: "/daily-focus", label: "Set today’s action" } },
+  "/progress": { title: "Progress", purpose: "Saved Snapshot, full-score, daily-action, and Architect Cycle history.", recommendation: { href: "/dashboard", label: "Return to dashboard" } },
   "/kai": { title: "Kai", purpose: "The current guided demo and the boundaries for the planned AI companion.", recommendation: { href: "/assessment", label: "Take the assessment" } },
   "/journal": { title: "Journal", purpose: "Reflection prompts and practices for deliberate personal growth.", recommendation: { href: "/dashboard", label: "Return to the dashboard" } },
   "/merchandise": { title: "Shop", purpose: "The current BYNV merchandise preview.", recommendation: { href: "/about", label: "Learn about BYNV" } },
@@ -46,7 +55,7 @@ export function getKaiPageContext(pathname: string) {
 
 export function createKaiRequest(message: string, pathname: string, quickAction: KaiQuickAction | null) {
   const page = getKaiPageContext(pathname);
-  const isAssessment = pathname === "/assessment";
+  const isAssessment = pathname === "/assessment" || pathname === "/architect-assessment";
 
   return {
     message: message.trim(),

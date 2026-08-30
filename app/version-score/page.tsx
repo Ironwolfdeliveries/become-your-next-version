@@ -1,3 +1,3 @@
 import { Score } from "@/components/score"; import { PageHero } from "@/components/ui";
-export const metadata={title:"Your Version Score",description:"See your Version Score, assessment-area results and personalised BYNV starting point."};
-export default function Results(){return <><PageHero eyebrow="Assessment complete" title="Your Version Score." copy="Your answers have created a personal starting snapshot—not a grade, diagnosis, or limit on what comes next."/><div className="container"><Score /></div></>}
+export const metadata={title:"Your Version Snapshot",description:"See your preliminary Version Score, Snapshot area results and BYNV starting point."};
+export default function Results(){return <><PageHero eyebrow="Version Snapshot complete" title="Your Version Score." copy="Your six answers have created an introductory Version Snapshot—not your full Architect Assessment, a grade, diagnosis, or limit on what comes next."/><div className="container"><Score /></div></>}

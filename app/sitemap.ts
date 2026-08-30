@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-const routes=["","/mission","/framework","/membership","/early-access","/assessment","/version-score","/create-account","/dashboard","/kai","/journal","/about","/contact","/faq","/privacy","/terms","/disclaimer","/merchandise"];
+const routes=["","/mission","/framework","/membership","/early-access","/assessment","/version-score","/create-account","/sign-in","/kai","/about","/contact","/faq","/privacy","/terms","/disclaimer","/merchandise"];
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
   return routes.map((route): MetadataRoute.Sitemap[number] => ({

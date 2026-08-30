@@ -1,3 +1,4 @@
-import { PageHero } from "@/components/ui"; import { resources } from "@/lib/data";
-export const metadata={title:"Resources & Journal",description:"Practical reflections and tools from BYNV."};
-export default function Journal(){return <><PageHero eyebrow="Resources & journal" title="Notes for a life under construction." copy="Practical prompts, considered ideas and tools to support your next deliberate iteration."/><section className="container cards">{resources.map(r=><article className="card" key={r.slug}><p className="eyebrow">{r.tag} · {r.read}</p><h2>{r.title}</h2><p>{r.summary}</p><p className="muted">Stage 1 editorial preview</p></article>)}</section></>}
+import { JournalWorkspace } from "@/components/journal-workspace";
+import { PageHero } from "@/components/ui";
+export const metadata = { title: "Architect Journal", description: "Capture private BYNV reflections and evidence of progress." };
+export default function Journal() { return <><PageHero eyebrow="Architect Journal" title="Notice what is changing." copy="Capture honest reflections, the friction you encountered, and the evidence you want your future self to remember." /><section className="container member-page"><JournalWorkspace /></section></>; }

@@ -43,9 +43,9 @@ export function Score() {
           <div><strong>{result.score}</strong><span>/100</span></div>
         </div>
         <div>
-          <p className="eyebrow">Your Version Score · Current focus: {result.focus}</p>
+          <p className="eyebrow">Your Version Snapshot · Current focus: {result.focus}</p>
           <h2 id="version-score-heading">A starting signal for what comes next.</h2>
-          <p className="lede-small">Your Version Score is a 0–100 snapshot of how you rated six areas of your life today. It is calculated directly from your answers and is meant to help you see where you feel strongest and where focused attention may help most.</p>
+          <p className="lede-small">This preliminary Version Score is a 0–100 Snapshot of how you rated six areas of your life today. It is calculated directly from your answers and helps reveal an initial strength and opportunity before the deeper Architect Assessment.</p>
           <p className="lede-small">{result.insight}</p>
         </div>
       </section>
@@ -54,7 +54,7 @@ export function Score() {
         <div className="result-section-heading">
           <p className="eyebrow">Your assessment areas</p>
           <h2 id="area-results-heading">See the pattern behind your score.</h2>
-          <p>These are the six areas the current assessment actually measures. Each result comes directly from your selected 1–5 response.</p>
+          <p>These are the six areas this introductory Snapshot measures. Each result comes directly from your selected 1–5 response.</p>
         </div>
         <div className="area-results">
           {result.areas.map((area) => (
@@ -93,13 +93,13 @@ export function Score() {
       <section className="result-journey" aria-labelledby="journey-heading">
         <div>
           <p className="eyebrow">Your BYNV starting point</p>
-          <h2 id="journey-heading">This result becomes the beginning of your personal system.</h2>
-          <p>With a secure BYNV account, your assessment can become the baseline for your personal Blueprint, Dashboard, progress tracking, and Kai coaching—so you can see what changes from here.</p>
+          <h2 id="journey-heading">This Snapshot becomes the first signal in your personal system.</h2>
+          <p>Save it to a secure BYNV account, then complete the deeper Architect Assessment to establish the fuller baseline that will shape your Blueprint, Dashboard, progress tracking, and future Kai coaching.</p>
           <div className="button-row">
             <Button href="/create-account">Save my results &amp; continue</Button>
             <Button href="/assessment" secondary>Retake assessment</Button>
           </div>
-          <small>Your answers currently remain in this browser session until secure account storage is connected.</small>
+          <small>Your answers remain in this browser until you create or sign in to a secure account.</small>
         </div>
         <div className="result-unlocks">
           <p className="eyebrow">Continuing with BYNV unlocks</p>

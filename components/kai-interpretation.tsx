@@ -12,7 +12,7 @@ export function KaiInterpretation({ interpretation }: { interpretation: KaiInter
       </div>
       <p>{interpretation.summary}</p>
       <p className="kai-result-focus"><strong>Focus first:</strong> {interpretation.focus}</p>
-      <small>Based directly on your assessment responses.</small>
+      <small>Deterministic guidance based directly on your six Version Snapshot responses. Live Kai coaching is not used here.</small>
     </section>
   );
 }

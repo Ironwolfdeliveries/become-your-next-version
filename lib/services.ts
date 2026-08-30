@@ -112,9 +112,6 @@ export function readAssessment(raw: string | null): AssessmentAnswers {
   }
 }
 
-export const mockServices = {
-  async submitInterest(email: string) { await wait(); return { ok: Boolean(email), message: "Demo saved — no email was sent." }; },
-  async sendContact() { await wait(); return { ok: true, message: "Demo received — connect an email provider to deliver it." }; },
-  async askKai(prompt: string) { await wait(500); return { text: `Let’s make that concrete. When you say “${prompt.slice(0, 80)}”, what is the smallest change you could notice within seven days? Choose one action you control.` }; },
+export const commercePreview = {
   async beginCheckout() { await wait(); return { ok: false, message: "Preview only — checkout is not enabled yet." }; }
 };

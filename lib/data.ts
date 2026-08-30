@@ -30,12 +30,13 @@ export const products: Product[] = [
 ];
 
 export const faqs = [
-  ["What is BYNV?", "Become Your Next Version is a personal-growth platform in development. It combines guided reflection, practical planning, community and a future AI coaching experience."],
+  ["What is BYNV?", "Become Your Next Version is a personal growth system that connects reflection, deliberate planning, daily action, and progress review."],
   ["Who are The Architects?", "The Architects is the name of the BYNV community: people choosing to design their next chapter with intention."],
-  ["Is the Version Score a diagnosis?", "No. It is an indicative self-reflection aid, not a clinical, medical or scientifically validated assessment."],
+  ["What is the Version Snapshot?", "The public six-question Version Snapshot is a preliminary signal. It is not the deeper Architect Assessment or your final BYNV baseline."],
+  ["Is the Version Score a diagnosis?", "No. It is a self-reflection aid based on your own answers, not a clinical, medical or scientifically validated assessment."],
   ["What does membership include?", "The planned membership includes guided cycles, community sessions, resources, progress reviews and access to Kai. Final benefits and pricing will be confirmed before purchase."],
   ["Can Kai replace a therapist or professional adviser?", "No. Kai is planned as a reflection and planning companion, not a substitute for medical, mental-health, legal, financial or other qualified professional support."],
-  ["Can I buy merchandise now?", "Not in Stage 1. The storefront is a catalogue preview; checkout, inventory, shipping and returns will be connected before launch."],
-  ["What happens when I join early access?", "This demo confirms your interest locally. A production release will use explicit consent, verified email and a clear unsubscribe path."],
-  ["How is my assessment data used?", "In this demo, answers remain in your browser session. See the Privacy page for planned production practices." ]
+  ["Can I buy merchandise now?", "Not yet. The storefront is a catalogue preview; checkout, inventory, shipping and returns are not connected."],
+  ["What happens when I create an account?", "Your Version Snapshot can be saved, and your Architect Assessment, Blueprint, Daily Focus, goals, journal entries, and progress can persist securely to your account."],
+  ["How is my assessment data used?", "Your responses calculate deterministic scores and organize your private BYNV experience. Live Kai AI is not connected and does not receive this data." ]
 ];
