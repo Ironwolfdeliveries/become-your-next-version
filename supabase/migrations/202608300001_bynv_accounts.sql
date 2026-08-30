@@ -188,15 +188,15 @@ begin
   foreach table_name in array array['profiles','version_snapshots','architect_assessments','architect_blueprints','daily_focus_entries','journal_entries','goals','architect_cycles','challenge_enrollments']
   loop
     owner_column := case when table_name = 'profiles' then 'id' else 'user_id' end;
-    execute format('drop policy if exists "Members manage own %1$s" on public.%1$I', table_name);
-    execute format('drop policy if exists %L on public.%I', 'Members read own ' || table_name, table_name);
-    execute format('drop policy if exists %L on public.%I', 'Members create own ' || table_name, table_name);
-    execute format('drop policy if exists %L on public.%I', 'Members update own ' || table_name, table_name);
-    execute format('drop policy if exists %L on public.%I', 'Members delete own ' || table_name, table_name);
-    execute format('create policy %L on public.%I for select to authenticated using ((select auth.uid()) = %s)', 'Members read own ' || table_name, table_name, owner_column);
-    execute format('create policy %L on public.%I for insert to authenticated with check ((select auth.uid()) = %s)', 'Members create own ' || table_name, table_name, owner_column);
-    execute format('create policy %L on public.%I for update to authenticated using ((select auth.uid()) = %s) with check ((select auth.uid()) = %s)', 'Members update own ' || table_name, table_name, owner_column, owner_column);
-    execute format('create policy %L on public.%I for delete to authenticated using ((select auth.uid()) = %s)', 'Members delete own ' || table_name, table_name, owner_column);
+    execute format('drop policy if exists %I on public.%I', 'Members manage own ' || table_name, table_name);
+    execute format('drop policy if exists %I on public.%I', 'Members read own ' || table_name, table_name);
+    execute format('drop policy if exists %I on public.%I', 'Members create own ' || table_name, table_name);
+    execute format('drop policy if exists %I on public.%I', 'Members update own ' || table_name, table_name);
+    execute format('drop policy if exists %I on public.%I', 'Members delete own ' || table_name, table_name);
+    execute format('create policy %I on public.%I for select to authenticated using ((select auth.uid()) = %s)', 'Members read own ' || table_name, table_name, owner_column);
+    execute format('create policy %I on public.%I for insert to authenticated with check ((select auth.uid()) = %s)', 'Members create own ' || table_name, table_name, owner_column);
+    execute format('create policy %I on public.%I for update to authenticated using ((select auth.uid()) = %s) with check ((select auth.uid()) = %s)', 'Members update own ' || table_name, table_name, owner_column, owner_column);
+    execute format('create policy %I on public.%I for delete to authenticated using ((select auth.uid()) = %s)', 'Members delete own ' || table_name, table_name, owner_column);
   end loop;
 end $$;
 
