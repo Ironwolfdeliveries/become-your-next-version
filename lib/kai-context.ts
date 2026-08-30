@@ -20,6 +20,7 @@ const pageContexts: Record<string, KaiPageContext> = {
   "/early-access": { title: "Early access", purpose: "The early-access interest form and what joining the list means.", recommendation: { href: "/membership", label: "Review membership" } },
   "/assessment": { title: "Kai Assessment", purpose: "A six-question reflection used to calculate an indicative Version Score.", recommendation: { href: "/framework", label: "Review the Architect Method" } },
   "/version-score": { title: "Version Score", purpose: "An indicative reflection snapshot based on the assessment responses.", recommendation: { href: "/dashboard", label: "See the dashboard preview" } },
+  "/create-account": { title: "Create your BYNV account", purpose: "The next step from a Version Score toward secure account access and saved progress.", recommendation: { href: "/early-access", label: "Request early access" } },
   "/dashboard": { title: "Dashboard", purpose: "A preview of the tools that organize progress and next actions.", recommendation: { href: "/journal", label: "Open the journal" } },
   "/kai": { title: "Kai", purpose: "The current guided demo and the boundaries for the planned AI companion.", recommendation: { href: "/assessment", label: "Take the assessment" } },
   "/journal": { title: "Journal", purpose: "Reflection prompts and practices for deliberate personal growth.", recommendation: { href: "/dashboard", label: "Return to the dashboard" } },
