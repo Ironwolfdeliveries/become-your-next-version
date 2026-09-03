@@ -17,7 +17,7 @@ function readableAuthError(message: string) {
   return "We could not complete that request. Check your information and try again.";
 }
 
-export function AuthForm({ mode }: { mode: Mode }) {
+export function AuthForm({ mode, redirectTo }: { mode: Mode; redirectTo?: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
@@ -49,6 +49,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         if (error) throw error;
         if (data.session && data.user) {
           await persistPendingVersionSnapshot(data.user.id);
+          void fetch("/api/email/welcome", { method: "POST" });
           router.replace("/welcome");
           router.refresh();
           return;
@@ -58,7 +59,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         if (data.user) await persistPendingVersionSnapshot(data.user.id);
-        router.replace("/dashboard");
+        router.replace(redirectTo?.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/dashboard");
         router.refresh();
       }
     } catch (error) {

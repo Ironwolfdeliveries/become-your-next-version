@@ -113,7 +113,7 @@ export function ArchitectAssessment() {
             {question.help && <p className="field-help">{question.help}</p>}
             {question.type === "scale" ? (
               <div className="architect-scale">
-                {[1, 2, 3, 4, 5].map((value) => <button type="button" key={value} aria-pressed={answers[question.id] === value} className={answers[question.id] === value ? "selected" : ""} onClick={() => setAnswers((current) => ({ ...current, [question.id]: value }))}><strong>{value}</strong><small>{value === 1 ? "Not true yet" : value === 5 ? "Consistently true" : ""}</small></button>)}
+                {[1, 2, 3, 4, 5].map((value) => <button type="button" key={value} aria-label={`${value} — ${question.scaleLabels?.[value - 1] ?? value}`} aria-pressed={answers[question.id] === value} className={answers[question.id] === value ? "selected" : ""} onClick={() => setAnswers((current) => ({ ...current, [question.id]: value }))}><strong>{value}</strong><small>{question.scaleLabels?.[value - 1] ?? ""}</small></button>)}
               </div>
             ) : <textarea value={String(answers[question.id] ?? "")} maxLength={2000} rows={5} onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))} placeholder="Add context in your own words (optional)…" />}
           </fieldset>

@@ -1,10 +1,10 @@
 export type NavItem = { label: string; href: string };
-export type Product = { name: string; category: string; price: string; description: string };
+export type Product = { name: string; category: string; price: string; description: string; variants: string[]; availability: string };
 
 export const navigation: NavItem[] = [
   { label: "Mission", href: "/mission" }, { label: "Method", href: "/framework" },
   { label: "Membership", href: "/membership" }, { label: "Kai", href: "/kai" },
-  { label: "Journal", href: "/journal" }, { label: "Shop", href: "/merchandise" }
+  { label: "Resources", href: "/resources" }, { label: "Shop", href: "/merchandise" }
 ];
 
 export const pillars = [
@@ -15,18 +15,18 @@ export const pillars = [
 ];
 
 export const resources = [
-  { slug: "quiet-audit", tag: "Reflection", title: "The quiet audit: notice before you optimise", summary: "A ten-minute practice for separating your priorities from the noise around them.", read: "4 min" },
-  { slug: "minimum-viable-momentum", tag: "Practice", title: "Minimum viable momentum", summary: "Why your smallest repeatable action can be more useful than a dramatic reset.", read: "5 min" },
-  { slug: "personal-operating-system", tag: "Method", title: "Draft your personal operating system", summary: "A simple prompt set for naming the conditions that help you do your best work.", read: "7 min" }
+  { slug: "quiet-audit", tag: "Reflection", title: "The Quiet Audit", summary: "A ten-minute practice for separating your priorities from the noise around them.", read: "4 min", download: "/resources/bynv-quiet-audit.pdf" },
+  { slug: "minimum-viable-momentum", tag: "Practice", title: "Minimum Viable Momentum", summary: "Turn one meaningful priority into an action small enough to repeat this week.", read: "5 min", download: "/resources/bynv-minimum-viable-momentum.pdf" },
+  { slug: "personal-operating-system", tag: "Method", title: "Your Personal Operating System", summary: "Name the conditions, boundaries, and review rhythm that help you do your best work.", read: "7 min", download: "/resources/bynv-personal-operating-system.pdf" }
 ];
 
 export const products: Product[] = [
-  { name: "Architect Heavyweight Tee", category: "Apparel", price: "$48", description: "Relaxed-fit black tee with understated metallic-gold mark." },
-  { name: "Next Version Crew", category: "Apparel", price: "$88", description: "Midweight charcoal crewneck designed for daily rituals." },
-  { name: "Architect Field Notes", category: "Notebooks", price: "$24", description: "Warm-white dot-grid pages for decisions, reviews and next steps." },
-  { name: "Build Deliberately Bottle", category: "Bottles", price: "$36", description: "Insulated matte-black bottle with minimal gold lettering." },
-  { name: "Version One Cap", category: "Accessories", price: "$32", description: "Low-profile cap with tonal embroidery and adjustable closure." },
-  { name: "Daily Systems Pouch", category: "Accessories", price: "$28", description: "Compact organiser for the tools behind your daily practice." }
+  { name: "Architect Heavyweight Tee", category: "Apparel", price: "$48 planned retail", description: "Relaxed-fit black heavyweight tee led by the metallic-gold Architect emblem.", variants: ["XS", "S", "M", "L", "XL", "2XL"], availability: "Concept preview — not currently available for purchase" },
+  { name: "Next Version Crew", category: "Apparel", price: "$88 planned retail", description: "Midweight charcoal crewneck with the Architect emblem as a quiet membership badge.", variants: ["XS", "S", "M", "L", "XL", "2XL"], availability: "Concept preview — not currently available for purchase" },
+  { name: "Architect Field Notes", category: "Notebooks", price: "$24 planned retail", description: "Black hardbound dot-grid notebook carrying the Architect mark for decisions, reviews, and next actions.", variants: ["A5 dot grid"], availability: "Concept preview — not currently available for purchase" },
+  { name: "Build Deliberately Bottle", category: "Bottles", price: "$36 planned retail", description: "Insulated matte-black bottle with the metallic-gold Architect emblem and a restrained BYNV detail.", variants: ["750 ml"], availability: "Concept preview — not currently available for purchase" },
+  { name: "Version One Cap", category: "Accessories", price: "$32 planned retail", description: "Low-profile black cap with gold Architect embroidery and an adjustable closure.", variants: ["Adjustable"], availability: "Concept preview — not currently available for purchase" },
+  { name: "Daily Systems Pouch", category: "Accessories", price: "$28 planned retail", description: "Compact zip organizer bearing the Architect emblem for the tools behind a repeatable daily system.", variants: ["One size"], availability: "Concept preview — not currently available for purchase" }
 ];
 
 export const faqs = [
@@ -34,9 +34,9 @@ export const faqs = [
   ["Who are The Architects?", "The Architects is the name of the BYNV community: people choosing to design their next chapter with intention."],
   ["What is the Version Snapshot?", "The public six-question Version Snapshot is a preliminary signal. It is not the deeper Architect Assessment or your final BYNV baseline."],
   ["Is the Version Score a diagnosis?", "No. It is a self-reflection aid based on your own answers, not a clinical, medical or scientifically validated assessment."],
-  ["What does membership include?", "The planned membership includes guided cycles, community sessions, resources, progress reviews and access to Kai. Final benefits and pricing will be confirmed before purchase."],
+  ["What does membership include?", "Launch Access starts with 30 free days, continues at $19.99/month through day 90, then becomes Foundation at $29.99/month. Builder is $49.99/month, Architect is $99.99/month, Architect Coaching is a separate future $249/month human service, and eligible graduates can later continue at $9.99/month. Credential- or release-dependent benefits are identified on the Membership page."],
   ["Can Kai replace a therapist or professional adviser?", "No. Kai is planned as a reflection and planning companion, not a substitute for medical, mental-health, legal, financial or other qualified professional support."],
-  ["Can I buy merchandise now?", "Not yet. The storefront is a catalogue preview; checkout, inventory, shipping and returns are not connected."],
+  ["Can I buy merchandise now?", "Not yet. The storefront shows real visual mockups and planned retail details, but inventory, fulfillment and checkout are not connected, so BYNV does not accept merchandise payment."],
   ["What happens when I create an account?", "Your Version Snapshot can be saved, and your Architect Assessment, Blueprint, Daily Focus, goals, journal entries, and progress can persist securely to your account."],
-  ["How is my assessment data used?", "Your responses calculate deterministic scores and organize your private BYNV experience. Live Kai AI is not connected and does not receive this data." ]
+  ["How is my assessment data used?", "Your responses calculate deterministic scores and organize your private BYNV experience. Once securely activated, Kai may use permitted account context; journal entries remain excluded unless BYNV adds an explicit opt-in." ]
 ];

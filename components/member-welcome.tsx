@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui";
 import { createClient } from "@/lib/supabase/client";
 import { persistPendingVersionSnapshot } from "@/lib/supabase/snapshot";
+import { KaiAvatar } from "./kai-avatar";
 
 export function MemberWelcome() {
   const [snapshotScore, setSnapshotScore] = useState<number | null>(null);
@@ -46,7 +47,7 @@ export function MemberWelcome() {
         </div>
       </div>
       <aside className="welcome-aside">
-        <span className="kai-mark kai-result-mark" aria-hidden="true">K</span>
+        <KaiAvatar className="kai-result-mark" />
         <p className="eyebrow">What comes next</p>
         <p>Your deeper responses establish the baseline for your Blueprint. You can leave at any point; progress saves to your account as you go.</p>
       </aside>

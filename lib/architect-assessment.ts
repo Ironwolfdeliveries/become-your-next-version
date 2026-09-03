@@ -3,6 +3,7 @@ export type ArchitectQuestion = {
   prompt: string;
   type: "scale" | "text";
   help?: string;
+  scaleLabels?: readonly [string, string, string, string, string];
 };
 
 export type ArchitectSection = {
@@ -12,7 +13,8 @@ export type ArchitectSection = {
   questions: ArchitectQuestion[];
 };
 
-const scale = (id: string, prompt: string, help?: string): ArchitectQuestion => ({ id, prompt, type: "scale", help });
+const frequencyScale = ["Not true for me", "Rarely true", "Sometimes true", "Often true", "Consistently true"] as const;
+const scale = (id: string, prompt: string, help?: string): ArchitectQuestion => ({ id, prompt, type: "scale", help, scaleLabels: frequencyScale });
 const text = (id: string, prompt: string, help?: string): ArchitectQuestion => ({ id, prompt, type: "text", help });
 
 /**
@@ -26,12 +28,12 @@ export const architectSections: ArchitectSection[] = [
     label: "Clarity & Direction",
     description: "What matters, where you are headed, and why it deserves your attention.",
     questions: [
-      scale("clarity-priorities", "I can name the priorities that matter most to me right now."),
-      scale("clarity-direction", "I have a clear picture of the next version of myself I want to build."),
-      scale("clarity-decisions", "My priorities make everyday decisions easier."),
-      scale("clarity-values", "The way I spend my time reflects what I say I value."),
-      scale("clarity-first-focus", "I know which area of my life deserves focused attention first."),
-      text("clarity-reflection", "What would meaningful progress look like over the next 90 days?", "A few honest sentences are enough."),
+      scale("clarity-priorities", "I can identify the two or three priorities that matter most in my life right now."),
+      scale("clarity-direction", "I can describe the person I want to become over the next year in concrete terms."),
+      scale("clarity-decisions", "When two demands compete, my priorities help me decide what to do."),
+      scale("clarity-values", "In a typical week, the way I use my time reflects what I say matters to me."),
+      scale("clarity-first-focus", "I know which part of my life needs focused attention first."),
+      text("clarity-reflection", "What specific change would make the next 90 days feel meaningfully different?", "A few honest sentences are enough."),
     ],
   },
   {
@@ -39,11 +41,11 @@ export const architectSections: ArchitectSection[] = [
     label: "Energy & Wellbeing",
     description: "The physical and mental capacity available for the life you want to build.",
     questions: [
-      scale("energy-rest", "My sleep and rest usually support the demands of my life."),
-      scale("energy-routines", "My daily routines protect rather than drain my energy."),
-      scale("energy-awareness", "I notice the habits and situations that change my energy."),
-      scale("energy-boundaries", "I set reasonable boundaries before I become depleted."),
-      scale("energy-recovery", "I have reliable ways to reset after a demanding day or week."),
+      scale("energy-rest", "Most days, my sleep and rest leave me able to meet my responsibilities."),
+      scale("energy-routines", "My usual routines help me maintain usable energy through the day."),
+      scale("energy-awareness", "I can identify which habits and situations raise or drain my energy."),
+      scale("energy-boundaries", "I limit demands before I reach the point of exhaustion."),
+      scale("energy-recovery", "After a demanding day or week, I use reliable ways to recover."),
       text("energy-reflection", "What most consistently gives you energy, and what most consistently drains it?"),
     ],
   },
@@ -52,12 +54,12 @@ export const architectSections: ArchitectSection[] = [
     label: "Action & Consistency",
     description: "How reliably your priorities become repeatable action.",
     questions: [
-      scale("action-weekly", "My weekly actions reflect my stated priorities."),
-      scale("action-start", "I can begin important work without waiting for ideal conditions."),
-      scale("action-finish", "I finish the commitments that matter most."),
-      scale("action-systems", "I use simple systems to make useful actions easier to repeat."),
-      scale("action-review", "I adjust my approach when an action is not producing the result I need."),
-      text("action-reflection", "Which important action is currently hardest for you to repeat?"),
+      scale("action-weekly", "In a typical week, I take action on the priorities I have named."),
+      scale("action-start", "I begin important work even when the timing or conditions are not ideal."),
+      scale("action-finish", "I complete the important commitments I make to myself or others."),
+      scale("action-systems", "I use reminders, routines, or other simple systems to repeat useful actions."),
+      scale("action-review", "When an approach is not working, I change it instead of repeating it unchanged."),
+      text("action-reflection", "Which important action do you intend to take but struggle to repeat?"),
     ],
   },
   {
@@ -65,11 +67,11 @@ export const architectSections: ArchitectSection[] = [
     label: "Resilience & Adaptability",
     description: "Your ability to respond to change without abandoning your direction.",
     questions: [
-      scale("resilience-reset", "I can recover my footing after a setback."),
-      scale("resilience-flexibility", "I can change the plan without losing sight of the outcome."),
-      scale("resilience-learning", "I treat mistakes as information I can use."),
-      scale("resilience-pressure", "Under pressure, I can still choose a constructive next step."),
-      scale("resilience-self-trust", "I trust myself to handle uncertainty one decision at a time."),
+      scale("resilience-reset", "After a setback, I return to useful action within a reasonable time."),
+      scale("resilience-flexibility", "When circumstances change, I adapt my plan while keeping the intended outcome in view."),
+      scale("resilience-learning", "After a mistake, I identify what to change the next time."),
+      scale("resilience-pressure", "When I feel pressure, I can still choose a constructive next step."),
+      scale("resilience-self-trust", "When the outcome is uncertain, I can make the next decision without needing complete certainty."),
       text("resilience-reflection", "What challenge or pattern is creating the most friction for you now?"),
     ],
   },
@@ -78,12 +80,12 @@ export const architectSections: ArchitectSection[] = [
     label: "Relationships & Support",
     description: "The people, communication, and support structures around your growth.",
     questions: [
-      scale("relationships-support", "I have people I can turn to for honest support."),
-      scale("relationships-presence", "I give important relationships meaningful attention."),
-      scale("relationships-communication", "I communicate my needs and boundaries clearly."),
-      scale("relationships-community", "I feel connected to a community or circle that helps me grow."),
-      scale("relationships-contribution", "I contribute to my relationships in ways that feel aligned and sustainable."),
-      text("relationships-reflection", "What relationship or support system would make your next step easier?"),
+      scale("relationships-support", "I have at least one person I can ask for honest support when I need it."),
+      scale("relationships-presence", "I give the relationships that matter to me regular, undistracted attention."),
+      scale("relationships-communication", "I state my needs and limits clearly rather than expecting others to guess."),
+      scale("relationships-community", "I participate in a group or community where mutual growth is supported."),
+      scale("relationships-contribution", "I give support to others without routinely exceeding my own capacity."),
+      text("relationships-reflection", "What kind of support would make your next step more realistic?"),
     ],
   },
   {
@@ -91,12 +93,12 @@ export const architectSections: ArchitectSection[] = [
     label: "Environment & Systems",
     description: "The spaces, tools, and structures that shape what becomes easy or difficult.",
     questions: [
-      scale("environment-space", "My primary spaces help me focus on what matters."),
-      scale("environment-tools", "The tools and information I rely on are organized and easy to use."),
-      scale("environment-distraction", "I actively reduce avoidable distractions."),
-      scale("environment-calendar", "My calendar protects time for important priorities."),
-      scale("environment-support", "My current systems support the person I am becoming."),
-      text("environment-reflection", "What one change to your environment would remove the most friction?"),
+      scale("environment-space", "The spaces where I spend the most time make it easier to focus on important work."),
+      scale("environment-tools", "I can find the tools and information I regularly need without unnecessary delay."),
+      scale("environment-distraction", "I remove or limit distractions that repeatedly interrupt important tasks."),
+      scale("environment-calendar", "My calendar includes protected time for my stated priorities."),
+      scale("environment-support", "My current routines and systems make my intended actions easier to complete."),
+      text("environment-reflection", "What single change to your space, schedule, or tools would remove the most friction?"),
     ],
   },
   {
@@ -104,12 +106,12 @@ export const architectSections: ArchitectSection[] = [
     label: "Reflection & Growth",
     description: "How deliberately you learn, review progress, and evolve your approach.",
     questions: [
-      scale("growth-review", "I regularly review what is and is not working."),
-      scale("growth-feedback", "I seek useful feedback instead of relying only on assumptions."),
-      scale("growth-progress", "I can point to evidence of progress over the past 90 days."),
-      scale("growth-learning", "I make time to learn skills that support my priorities."),
-      scale("growth-next-version", "I am willing to release habits or identities that no longer fit where I am going."),
-      text("growth-reflection", "What do you most want your future self to thank you for beginning now?"),
+      scale("growth-review", "I set aside time to review which actions are working and which are not."),
+      scale("growth-feedback", "I ask for specific feedback when another perspective would improve my decision."),
+      scale("growth-progress", "I can name concrete evidence of progress from the past 90 days."),
+      scale("growth-learning", "I make time to learn a skill that directly supports one of my current priorities."),
+      scale("growth-next-version", "I stop habits or commitments when evidence shows they no longer support my direction."),
+      text("growth-reflection", "What would you like to begin now that could matter to you a year from today?"),
     ],
   },
 ];

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { createKaiRequest, getKaiPageContext, KAI_QUICK_ACTIONS } from "@/lib/kai-context";
 import type { KaiQuickAction } from "@/lib/kai-context";
+import { KaiAvatar } from "./kai-avatar";
 
 export function AskKai() {
   const pathname = usePathname() || "/";
@@ -15,6 +16,10 @@ export function AskKai() {
   const [prompt, setPrompt] = useState("");
   const [quickAction, setQuickAction] = useState<KaiQuickAction | null>(null);
   const [preparedRequest, setPreparedRequest] = useState<ReturnType<typeof createKaiRequest> | null>(null);
+  const [answer, setAnswer] = useState("");
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -32,6 +37,9 @@ export function AskKai() {
   useEffect(() => {
     setPreparedRequest(null);
     setQuickAction(null);
+    setAnswer("");
+    setConversationId(null);
+    setError("");
   }, [pathname]);
 
   function selectQuickAction(action: KaiQuickAction) {
@@ -41,13 +49,20 @@ export function AskKai() {
     inputRef.current?.focus();
   }
 
-  function submitQuestion(event: FormEvent<HTMLFormElement>) {
+  async function submitQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!prompt.trim()) return;
 
     const request = createKaiRequest(prompt, pathname, quickAction);
-    // Keep the prepared payload local until an authenticated Kai backend adapter is connected.
     setPreparedRequest(request);
+    setPending(true); setAnswer(""); setError("");
+    try {
+      const response = await fetch("/api/kai", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: request.message, route: pathname, conversationId }) });
+      const result = await response.json() as { answer?: string; conversationId?: string; error?: string };
+      if (!response.ok || !result.answer) throw new Error(result.error ?? "Kai could not respond.");
+      setAnswer(result.answer); setConversationId(result.conversationId ?? conversationId); setPrompt(""); setQuickAction(null);
+    } catch (submitError) { setError(submitError instanceof Error ? submitError.message : "Kai could not respond."); }
+    finally { setPending(false); }
   }
 
   return (
@@ -55,7 +70,7 @@ export function AskKai() {
       {isOpen ? (
         <section className="ask-kai-panel" id="ask-kai-panel" role="dialog" aria-label="Ask Kai">
           <header className="ask-kai-panel-head">
-            <span className="kai-mark ask-kai-mark" aria-hidden="true">K</span>
+            <KaiAvatar className="ask-kai-mark" />
             <div>
               <strong>Ask Kai</strong>
               <small>Page-aware BYNV guidance</small>
@@ -94,14 +109,13 @@ export function AskKai() {
                 placeholder="Ask Kai anything about this page…"
                 autoComplete="off"
               />
-              <button type="submit" disabled={!prompt.trim()}>Ask</button>
+              <button type="submit" disabled={!prompt.trim() || pending}>{pending ? "Thinking…" : "Ask"}</button>
             </form>
 
             <p className="ask-kai-status" aria-live="polite">
-              {preparedRequest
-                ? `Your question is ready with ${preparedRequest.context.pageTitle} context. Live Kai answers require the secure backend connection.`
-                : "Live AI replies are not connected yet. Do not share sensitive information."}
+              {error || (preparedRequest ? `Kai received ${preparedRequest.context.pageTitle} context.` : "Kai uses the current page and permitted private account context. Avoid highly sensitive information.")}
             </p>
+            {answer && <div className="ask-kai-answer" aria-live="polite"><small>Kai</small><p>{answer}</p></div>}
 
             <Link className="ask-kai-next" href={page.recommendation.href}>
               <span>Suggested next section</span>
@@ -118,7 +132,7 @@ export function AskKai() {
         aria-controls="ask-kai-panel"
         onClick={() => setIsOpen((open) => !open)}
       >
-        <span className="kai-mark ask-kai-toggle-mark" aria-hidden="true">K</span>
+        <KaiAvatar className="ask-kai-toggle-mark" />
         <span className="ask-kai-label">Ask Kai</span>
         <span className="sr-only">{isOpen ? "Close Ask Kai" : "Open Ask Kai"}</span>
       </button>

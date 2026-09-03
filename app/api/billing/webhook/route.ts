@@ -1,0 +1,110 @@
+import { NextResponse } from "next/server";
+import type Stripe from "stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getStripe } from "@/lib/stripe";
+import { sendBillingIssueEmail } from "@/lib/email";
+
+function tierFromPrice(priceId: string | null | undefined) {
+  if (priceId && (priceId === process.env.STRIPE_FOUNDATION_INTRO_PRICE_ID || priceId === process.env.STRIPE_FOUNDATION_PRICE_ID)) return "foundation";
+  if (priceId && priceId === process.env.STRIPE_ARCHITECT_PRICE_ID) return "architect";
+  if (priceId && priceId === process.env.STRIPE_BUILDER_PRICE_ID) return "builder";
+  if (priceId && priceId === process.env.STRIPE_ARCHITECT_COACHING_PRICE_ID) return "architect_coaching";
+  if (priceId && priceId === process.env.STRIPE_GRADUATE_PRICE_ID) return "graduate";
+  return "foundation";
+}
+
+async function ensureFoundationSchedule(subscription: Stripe.Subscription) {
+  const introPrice = process.env.STRIPE_FOUNDATION_INTRO_PRICE_ID;
+  const standardPrice = process.env.STRIPE_FOUNDATION_PRICE_ID;
+  if (!introPrice || !standardPrice || !subscription.trial_end) throw new Error("Foundation launch prices or trial end are missing.");
+  const stripe = getStripe();
+  const schedule = subscription.schedule
+    ? await stripe.subscriptionSchedules.retrieve(typeof subscription.schedule === "string" ? subscription.schedule : subscription.schedule.id)
+    : await stripe.subscriptionSchedules.create({ from_subscription: subscription.id });
+  if (!schedule.current_phase) throw new Error("Foundation schedule has no current phase.");
+  const updated = await stripe.subscriptionSchedules.update(schedule.id, {
+    end_behavior: "release",
+    proration_behavior: "none",
+    phases: [
+      {
+        start_date: schedule.current_phase.start_date,
+        end_date: subscription.trial_end,
+        trial_end: subscription.trial_end,
+        items: [{ price: introPrice, quantity: 1 }],
+        proration_behavior: "none",
+        metadata: { bynv_tier: "foundation", bynv_launch_phase: "free" },
+      },
+      {
+        duration: { interval: "month", interval_count: 2 },
+        items: [{ price: introPrice, quantity: 1 }],
+        proration_behavior: "none",
+        metadata: { bynv_tier: "foundation", bynv_launch_phase: "introductory" },
+      },
+      {
+        items: [{ price: standardPrice, quantity: 1 }],
+        proration_behavior: "none",
+        metadata: { bynv_tier: "foundation", bynv_launch_phase: "standard" },
+      },
+    ],
+  });
+  const discountEnd = updated.phases[1]?.end_date;
+  const userId = subscription.metadata.bynv_user_id;
+  if (!userId) throw new Error("Foundation subscription is not linked to a BYNV member.");
+  await createAdminClient().from("memberships").upsert({
+    user_id: userId,
+    stripe_customer_id: typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id,
+    stripe_subscription_id: subscription.id,
+    launch_access_started_at: new Date(subscription.start_date * 1000).toISOString(),
+    launch_free_ends_at: new Date(subscription.trial_end * 1000).toISOString(),
+    launch_discount_ends_at: discountEnd ? new Date(discountEnd * 1000).toISOString() : null,
+  }, { onConflict: "user_id" });
+}
+
+async function syncSubscription(subscription: Stripe.Subscription) {
+  const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+  const priceId = subscription.items.data[0]?.price.id ?? null;
+  const itemPeriodEnd = subscription.items.data[0]?.current_period_end;
+  const tier = tierFromPrice(priceId);
+  const admin = createAdminClient();
+  const { data: membership } = await admin.from("memberships").select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
+  const userId = membership?.user_id ?? subscription.metadata.bynv_user_id;
+  if (!userId) throw new Error("Stripe subscription is not linked to a BYNV member.");
+  const status = subscription.status === "active" || subscription.status === "trialing" ? subscription.status : subscription.status === "past_due" ? "past_due" : subscription.status === "canceled" ? "canceled" : subscription.status === "paused" ? "paused" : "incomplete";
+  await admin.from("memberships").upsert({ user_id: userId, tier, status, stripe_customer_id: customerId, stripe_subscription_id: subscription.id, stripe_price_id: priceId, current_period_end: itemPeriodEnd ? new Date(itemPeriodEnd * 1000).toISOString() : null, cancel_at_period_end: subscription.cancel_at_period_end, last_payment_error: null }, { onConflict: "user_id" });
+  const accessLevel = status === "active" || status === "trialing" ? tier === "architect" ? "mastermind" : tier === "builder" ? "priority" : "community" : "community";
+  await admin.from("community_entitlements").upsert({ user_id: userId, access_level: accessLevel }, { onConflict: "user_id" });
+}
+
+export async function POST(request: Request) {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const signature = request.headers.get("stripe-signature");
+  if (!secret || !signature) return NextResponse.json({ error: "Webhook is not configured." }, { status: 503 });
+  let event: Stripe.Event;
+  try { event = getStripe().webhooks.constructEvent(await request.text(), signature, secret); }
+  catch { return NextResponse.json({ error: "Invalid webhook signature." }, { status: 400 }); }
+  try {
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      if (session.metadata?.bynv_invitation_id && session.metadata?.bynv_user_id) await createAdminClient().from("architect_invitations").update({ status: "accepted", accepted_by: session.metadata.bynv_user_id, accepted_at: new Date().toISOString() }).eq("id", session.metadata.bynv_invitation_id).eq("status", "pending");
+      if (session.metadata?.bynv_launch_schedule === "foundation-v1" && session.subscription) {
+        const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
+        await ensureFoundationSchedule(await getStripe().subscriptions.retrieve(subscriptionId));
+      }
+    }
+    if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") await syncSubscription(event.data.object);
+    if (event.type === "invoice.payment_failed") {
+      const invoice = event.data.object;
+      const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+      if (customerId) {
+        const admin = createAdminClient();
+        const { data: membership } = await admin.from("memberships").select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
+        await admin.from("memberships").update({ status: "past_due", last_payment_error: "Payment failed. Update the payment method in billing management." }).eq("stripe_customer_id", customerId);
+        if (membership?.user_id) await sendBillingIssueEmail(membership.user_id, event.id).catch((sendError) => console.error("billing_email_failed", sendError));
+      }
+    }
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error("billing_webhook_failed", event.id, error);
+    return NextResponse.json({ error: "Webhook processing failed." }, { status: 500 });
+  }
+}
