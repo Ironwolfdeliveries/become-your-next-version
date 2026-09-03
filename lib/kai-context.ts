@@ -2,6 +2,7 @@ export const KAI_QUICK_ACTIONS = [
   "Explain this",
   "What should I do next?",
   "How does this affect my Version Score?",
+  "What could AI take off my plate?",
 ] as const;
 
 export type KaiQuickAction = (typeof KAI_QUICK_ACTIONS)[number];
@@ -28,7 +29,7 @@ const pageContexts: Record<string, KaiPageContext> = {
   "/blueprint": { title: "Architect Blueprint", purpose: "A deterministic starting plan derived from the completed Architect Assessment.", recommendation: { href: "/daily-focus", label: "Set today’s focus" } },
   "/dashboard": { title: "Architect Dashboard", purpose: "The member’s saved assessment, Blueprint, daily focus, and progress hub.", recommendation: { href: "/daily-focus", label: "Open Daily Focus" } },
   "/account": { title: "BYNV account", purpose: "The member’s account identity, membership, security, privacy, and support options.", recommendation: { href: "/dashboard", label: "Return to dashboard" } },
-  "/daily-focus": { title: "Daily Focus", purpose: "One saved priority, action, and reflection for today.", recommendation: { href: "/journal", label: "Open the journal" } },
+  "/daily-focus": { title: "Daily Focus + AI Leverage", purpose: "One saved priority and action, plus a practical audit of recurring work AI can help carry.", recommendation: { href: "/journal", label: "Open the journal" } },
   "/goals": { title: "Architect Goals", purpose: "Saved outcomes connected to the seven assessment domains.", recommendation: { href: "/architect-cycle", label: "Begin an Architect Cycle" } },
   "/challenges": { title: "Architect Challenges", purpose: "Focused, saved practices with transparent progress instead of artificial points.", recommendation: { href: "/daily-focus", label: "Set today’s focus" } },
   "/community": { title: "Architect Community", purpose: "Private member Rooms for accountability, challenges, milestones, and domain conversations.", recommendation: { href: "/community/rooms/general", label: "Open the General Room" } },

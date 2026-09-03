@@ -42,6 +42,21 @@ export function AskKai() {
     setError("");
   }, [pathname]);
 
+  useEffect(() => {
+    function openWithPrompt(event: Event) {
+      const detail = (event as CustomEvent<{ prompt?: string }>).detail;
+      if (!detail?.prompt) return;
+      setIsOpen(true);
+      setPrompt(detail.prompt);
+      setQuickAction(null);
+      setPreparedRequest(null);
+      setAnswer("");
+      setError("");
+    }
+    window.addEventListener("bynv:ask-kai", openWithPrompt);
+    return () => window.removeEventListener("bynv:ask-kai", openWithPrompt);
+  }, []);
+
   function selectQuickAction(action: KaiQuickAction) {
     setPrompt(action);
     setQuickAction(action);

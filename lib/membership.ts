@@ -6,7 +6,7 @@ export const membershipTiers = {
     label: "Start here",
     description: "A structured entry into BYNV with a clear launch sequence—not a permanently free membership.",
     pricing: ["Days 1–30: $0", "Days 31–90: $19.99/month", "Day 91 onward: $29.99/month"],
-    benefits: ["BYNV platform access", "Version Snapshot and Architect Assessment", "Version Score and personal Blueprint", "Daily OS, goals, journal, cycles, and progress", "Core Community, challenges, and progression", "Essential Kai access when live Kai is activated", "Core downloadable resources as released"],
+    benefits: ["BYNV platform access", "Version Snapshot and Architect Assessment", "Version Score and personal Blueprint", "Daily OS, goals, journal, cycles, and progress", "AI Delegation Audit with transferable handoff templates", "Core Community, challenges, and progression", "Essential Kai access when live Kai is activated", "Core downloadable resources as released"],
     availability: "Launch billing remains disabled until secure Stripe products are connected.",
   },
   builder: {
@@ -16,7 +16,7 @@ export const membershipTiers = {
     label: "Expanded practice",
     description: "For members ready for deeper tools, guidance, and a more connected progression experience.",
     pricing: [],
-    benefits: ["Everything in Foundation", "Expanded Kai access when live Kai is activated", "Priority Community", "Expanded challenges and guided workflows", "Advanced progress views as released", "Expanded PDF and resource library", "Member merchandise and event discounts when operational", "Priority product support"],
+    benefits: ["Everything in Foundation", "Expanded Kai and AI-workflow guidance when live Kai is activated", "Priority Community", "Expanded challenges and guided workflows", "Advanced progress views as released", "Expanded PDF and resource library", "Member merchandise and event discounts when operational", "Priority product support"],
     availability: "Paid activation awaits secure Stripe configuration.",
   },
   architect: {
