@@ -1,3 +1,46 @@
 import { PageHero } from "@/components/ui";
-export const metadata={title:"Disclaimer",description:"Important limitations for BYNV, Kai and the Version Score."};
-export default function Disclaimer(){return <><PageHero eyebrow="Important context" title="A tool for reflection—not professional advice." copy="Use BYNV to support your thinking, never to replace qualified care or judgement."/><article className="content container"><h2>No medical or professional advice</h2><p>BYNV materials, assessment responses, Blueprints, plans and Version Scores are for general educational and reflective purposes. They are not medical, mental-health, diagnostic, legal, financial or other professional advice.</p><h2>Version Score limitations</h2><p>Version Scores are simple calculations from self-reported answers. They have not been presented as scientifically or clinically validated instruments. Do not use them to make health, safety, employment, financial or other high-stakes decisions.</p><h2>Kai limitations</h2><p>Launch Guided Kai uses structured BYNV rules and saved context; it is not a fully generative chatbot. It may not understand unsupported free-text questions and does not diagnose, provide professional care, or monitor emergencies. Portable prompts are drafts you must review before using with an external AI service. If you may be in danger or crisis, contact local emergency services or an appropriate crisis resource in your location.</p><h2>Your responsibility</h2><p>You remain responsible for your decisions and should seek an appropriately qualified professional when circumstances require one.</p></article></>}
+export const metadata = {
+  title: "Disclaimer",
+  description: "Important limitations for BYNV, Kai and the Version Score.",
+};
+export default function Disclaimer() {
+  return (
+    <>
+      <PageHero
+        eyebrow="Important context"
+        title="A tool for reflection—not professional advice."
+        copy="Use BYNV to support your thinking, never to replace qualified care or judgement."
+      />
+      <article className="content container">
+        <h2>No medical or professional advice</h2>
+        <p>
+          BYNV materials, assessment responses, Blueprints, plans and Version
+          Scores are for general educational and reflective purposes. They are
+          not medical, mental-health, diagnostic, legal, financial or other
+          professional advice.
+        </p>
+        <h2>Version Score limitations</h2>
+        <p>
+          Version Scores are simple calculations from self-reported answers.
+          They have not been presented as scientifically or clinically validated
+          instruments. Do not use them to make health, safety, employment,
+          financial or other high-stakes decisions.
+        </p>
+        <h2>Kai limitations</h2>
+        <p>
+          Guided Kai uses structured BYNV rules and saved context; Live Kai Beta
+          is an owner-approved conversational beta. Neither mode diagnoses,
+          provides professional care, or monitors emergencies. Portable prompts
+          and Live responses are drafts you must review. If you may be in danger
+          or crisis, contact local emergency services or an appropriate crisis
+          resource in your location.
+        </p>
+        <h2>Your responsibility</h2>
+        <p>
+          You remain responsible for your decisions and should seek an
+          appropriately qualified professional when circumstances require one.
+        </p>
+      </article>
+    </>
+  );
+}

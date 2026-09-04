@@ -1,4 +1,89 @@
 import { PageHero } from "@/components/ui";
 import { BYNV_CONTACT_EMAIL } from "@/lib/contact";
-export const metadata={title:"Terms",description:"Terms for using BYNV and its account features."};
-export default function Terms(){return <><PageHero eyebrow="Legal" title="Terms of use." copy="Terms for using the current BYNV website and account experience. Last updated 4 September 2026."/><article className="content container"><h2>Your account</h2><p>You are responsible for accurate registration information, protecting your password, and activity under your account. Do not share access or attempt to access another person&apos;s records. BYNV may restrict access necessary to protect members or the service.</p><h2>Personal reflection tools</h2><p>Version Scores, Snapshots, Architect Assessments, Blueprints, Guided Kai responses, portable prompts, and progress tools are educational self-reflection aids. They are not clinical assessments, professional advice, or promises of a particular result.</p><h2>Community conduct</h2><p>Community participation is subject to the Community Guidelines. BYNV may hide content, restrict participation, or suspend access when reasonably necessary to protect members or enforce those standards. Member reports are reviewed privately.</p><h2>Acceptable use</h2><p>Do not misuse the site, attempt unauthorized access, interfere with its operation, submit unlawful material, or use automated means that unreasonably burden it.</p><h2>Membership and billing</h2><p>Launch Access begins with 30 free days, continues at $19.99 per month for days 31–90, and becomes Foundation at $29.99 per month from day 91. Builder is $49.99 per month. Architect is $99.99 per month. Architect Coaching is a separate $249 per month human-coaching service that will open only after its delivery scope, capacity, and service terms are operational. Eligible graduates may later continue through Graduate / Lifetime Architect access at $9.99 per month. Paid memberships renew monthly until canceled. Checkout, invoices, payment methods, and cancellation are handled through Stripe. Access may be limited after failed payment or cancellation.</p><h2>Merchandise</h2><p>Merchandise images and planned prices are concept previews until a legitimate checkout and fulfillment provider is connected. BYNV does not accept merchandise payment while items are marked unavailable. Prices may change; shipping is separate where applicable; final shipping and return terms will be shown before purchase. Questions may be sent to <a href={`mailto:${BYNV_CONTACT_EMAIL}`}>{BYNV_CONTACT_EMAIL}</a>.</p><h2>Intellectual property</h2><p>BYNV names, presentation, and original materials are reserved to their respective owner. You may use the service for personal purposes but may not reproduce or commercially exploit it without permission.</p><h2>Availability and changes</h2><p>Features may evolve. To the extent permitted by law, the service is provided as available without a guarantee of uninterrupted access or fitness for a particular purpose. Nothing here excludes rights or liability that cannot lawfully be excluded.</p><p>These operational terms require qualified legal review and jurisdiction-specific consumer provisions before commercial activation. Contact <a href={`mailto:${BYNV_CONTACT_EMAIL}`}>{BYNV_CONTACT_EMAIL}</a> with account or support questions.</p></article></>}
+export const metadata = {
+  title: "Terms",
+  description: "Terms for using BYNV and its account features.",
+};
+export default function Terms() {
+  return (
+    <>
+      <PageHero
+        eyebrow="Legal"
+        title="Terms of use."
+        copy="Terms for using the current BYNV website and account experience. Last updated 4 September 2026."
+      />
+      <article className="content container">
+        <h2>Your account</h2>
+        <p>
+          You are responsible for accurate registration information, protecting
+          your password, and activity under your account. Do not share access or
+          attempt to access another person&apos;s records. BYNV may restrict
+          access necessary to protect members or the service.
+        </p>
+        <h2>Personal reflection tools</h2>
+        <p>
+          Version Scores, Snapshots, Architect Assessments, Blueprints, Guided
+          Kai responses, portable prompts, and progress tools are educational
+          self-reflection aids. They are not clinical assessments, professional
+          advice, or promises of a particular result.
+        </p>
+        <h2>Community conduct</h2>
+        <p>
+          Community participation is subject to the Community Guidelines. BYNV
+          may hide content, restrict participation, or suspend access when
+          reasonably necessary to protect members or enforce those standards.
+          Member reports are reviewed privately.
+        </p>
+        <h2>Acceptable use</h2>
+        <p>
+          Do not misuse the site, attempt unauthorized access, interfere with
+          its operation, submit unlawful material, or use automated means that
+          unreasonably burden it.
+        </p>
+        <h2>Membership and billing</h2>
+        <p>
+          Launch Access begins with 30 free days, continues at $19.99 per month
+          for days 31–90, and becomes Foundation at $29.99 per month from day
+          91. Builder is $49.99 per month. Architect is $99.99 per month.
+          Architect Coaching is a separate $249 per month human-coaching service
+          that will open only after its delivery scope, capacity, and service
+          terms are operational. Eligible graduates may later continue through
+          Graduate / Lifetime Architect access at $9.99 per month. Paid
+          memberships renew monthly until canceled. Checkout, invoices, payment
+          methods, and cancellation are handled through Stripe. Access may be
+          limited after failed payment or cancellation.
+        </p>
+        <h2>Merchandise</h2>
+        <p>
+          Merchandise images and planned prices are concept previews until a
+          legitimate checkout and fulfillment provider is connected. BYNV does
+          not accept merchandise payment while items are marked unavailable.
+          Prices may change; shipping is separate where applicable; final
+          shipping and return terms will be shown before purchase. Questions may
+          be sent to{" "}
+          <a href={`mailto:${BYNV_CONTACT_EMAIL}`}>{BYNV_CONTACT_EMAIL}</a>.
+        </p>
+        <h2>Intellectual property</h2>
+        <p>
+          BYNV names, presentation, and original materials are reserved to their
+          respective owner. You may use the service for personal purposes but
+          may not reproduce or commercially exploit it without permission.
+        </p>
+        <h2>Availability and changes</h2>
+        <p>
+          Features may evolve. To the extent permitted by law, the service is
+          provided as available without a guarantee of uninterrupted access or
+          fitness for a particular purpose. Nothing here excludes rights or
+          liability that cannot lawfully be excluded.
+        </p>
+        <p>
+          These operational terms require qualified legal review and
+          jurisdiction-specific consumer provisions before commercial
+          activation. Contact{" "}
+          <a href={`mailto:${BYNV_CONTACT_EMAIL}`}>{BYNV_CONTACT_EMAIL}</a> with
+          account or support questions.
+        </p>
+      </article>
+    </>
+  );
+}

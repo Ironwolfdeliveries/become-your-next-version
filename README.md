@@ -14,14 +14,14 @@ Open [http://localhost:3000](http://localhost:3000). Node 20+ is recommended.
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start the Next.js development server |
-| `npm run build` | Create a production build |
-| `npm run start` | Serve the production build |
-| `npm run lint` | Run ESLint |
+| Command             | Purpose                                 |
+| ------------------- | --------------------------------------- |
+| `npm run dev`       | Start the Next.js development server    |
+| `npm run build`     | Create a production build               |
+| `npm run start`     | Serve the production build              |
+| `npm run lint`      | Run ESLint                              |
 | `npm run typecheck` | Check TypeScript without emitting files |
-| `npm test` | Run lint and TypeScript checks |
+| `npm test`          | Run lint and TypeScript checks          |
 
 ## Continuous integration
 
@@ -44,20 +44,21 @@ Commit the lockfile and use `npm ci`, lint, typecheck, and an optimized producti
 
 Copy `.env.example` to `.env.local`. Account and persistence features require a provisioned Supabase project.
 
-| Variable | Use |
-| --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | Canonical production URL |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe Supabase publishable key |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Legacy fallback for projects still using the anon key name |
-| `SUPABASE_SERVICE_ROLE_KEY` | Protected server-only membership, webhook, invitation, and email operations |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Subscription Checkout, Portal, and signed webhook verification |
-| `STRIPE_FOUNDATION_INTRO_PRICE_ID`, `STRIPE_FOUNDATION_PRICE_ID` | Foundation launch sequence: two paid introductory months, then the standard monthly rate |
-| `STRIPE_BUILDER_PRICE_ID`, `STRIPE_ARCHITECT_PRICE_ID` | Builder and Architect recurring prices |
-| `STRIPE_ARCHITECT_COACHING_PRICE_ID`, `STRIPE_GRADUATE_PRICE_ID` | Future gated Coaching and eligible Graduate recurring prices |
-| `RESEND_API_KEY`, `EMAIL_FROM` | Branded transactional email; the public reply/support address is centralized in `lib/contact.ts` |
-| `KAI_MODE` | Kai operating mode. Launch default is `GUIDED`; an API key alone cannot change it. |
-| `OPENAI_API_KEY`, `OPENAI_MODEL` | Dormant future LIVE-mode inference; not required or used in Guided mode. |
+| Variable                                                         | Use                                                                                                                        |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                                           | Canonical production URL                                                                                                   |
+| `NEXT_PUBLIC_SUPABASE_URL`                                       | Supabase project URL                                                                                                       |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                           | Browser-safe Supabase publishable key                                                                                      |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                                  | Legacy fallback for projects still using the anon key name                                                                 |
+| `SUPABASE_SERVICE_ROLE_KEY`                                      | Protected server-only membership, webhook, invitation, and email operations                                                |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`                     | Subscription Checkout, Portal, and signed webhook verification                                                             |
+| `STRIPE_FOUNDATION_INTRO_PRICE_ID`, `STRIPE_FOUNDATION_PRICE_ID` | Foundation launch sequence: two paid introductory months, then the standard monthly rate                                   |
+| `STRIPE_BUILDER_PRICE_ID`, `STRIPE_ARCHITECT_PRICE_ID`           | Builder and Architect recurring prices                                                                                     |
+| `STRIPE_ARCHITECT_COACHING_PRICE_ID`, `STRIPE_GRADUATE_PRICE_ID` | Future gated Coaching and eligible Graduate recurring prices                                                               |
+| `RESEND_API_KEY`, `EMAIL_FROM`                                   | Branded transactional email; the public reply/support address is centralized in `lib/contact.ts`                           |
+| `KAI_MODE`, `KAI_LIVE_BETA_ENABLED`, `KAI_EMERGENCY_SHUTOFF`     | Independent server gates for controlled Live Kai Beta. An API key alone cannot activate it.                                |
+| `OPENAI_API_KEY`, `OPENAI_MODEL`                                 | Server-only Live Kai Beta inference; Guided Kai does not require or use them.                                              |
+| `KAI_LIVE_BETA_*`                                                | Per-minute/day/month allowances, input/output limits, request reserve, pricing rates, and internal monthly budget ceiling. |
 
 Never prefix secrets with `NEXT_PUBLIC_`. Validate them server-side before enabling a live adapter.
 
@@ -73,4 +74,4 @@ Configure Supabase Auth to use the templates in `supabase/email-templates/` afte
 
 ## Configuration gates
 
-Billing and branded email fail closed until their production credentials are configured. Kai launches in deterministic, context-aware Guided mode with no per-message model API cost. Future LIVE mode requires an explicit global mode, enable flag, tier eligibility, daily and monthly allowances, input/output limits, a usage ledger, an emergency shutoff, and a configured business spending ceiling; an OpenAI key by itself is insufficient. Merchandise remains a visual catalogue without checkout or fulfillment. Version Scores remain educational self-reflection aids—not clinical, diagnostic, medical, or scientifically validated measures. See `/disclaimer` and `/privacy`.
+Billing and branded email fail closed until their production credentials are configured. Guided Kai is always available with no per-message model API cost. Live Kai Beta requires the server gates, owner-controlled database switch, disabled emergency shutoff, an owner or individually approved active account, atomic operational allowance/budget reservation, and the configured model credential. Any failed gate falls back to Guided Kai. Merchandise remains a visual catalogue without checkout or fulfillment. Version Scores remain educational self-reflection aids—not clinical, diagnostic, medical, or scientifically validated measures. See `/disclaimer` and `/privacy`.

@@ -1,15 +1,27 @@
-export type KaiOperatingMode = "GUIDED" | "LIVE";
+export type KaiOperatingMode = "GUIDED" | "LIVE_BETA";
+
+export type KaiBetaAccess = {
+  platform_role?: string | null;
+  entitlement_status?: string | null;
+  kai_live_beta_enabled?: boolean | null;
+};
+
+export type KaiOperationalSettings = {
+  live_beta_enabled?: boolean | null;
+  emergency_shutoff?: boolean | null;
+};
 
 export type KaiLiveConfig = {
   dailyAllowance: number;
   monthlyAllowance: number;
+  perMinuteAllowance: number;
   maxInputChars: number;
   maxOutputTokens: number;
   monthlyBudgetMicroUsd: number;
   maxRequestCostMicroUsd: number;
   inputMicroUsdPerMillionTokens: number;
   outputMicroUsdPerMillionTokens: number;
-  eligibleTiers: Set<string>;
+  model: string;
 };
 
 function positiveInteger(name: string) {
@@ -17,21 +29,105 @@ function positiveInteger(name: string) {
   return Number.isSafeInteger(value) && value > 0 ? value : null;
 }
 
+function within(value: number | null, maximum: number) {
+  return value && value <= maximum ? value : null;
+}
+
 export function getKaiOperatingMode(): KaiOperatingMode {
-  return process.env.KAI_MODE?.toUpperCase() === "LIVE" ? "LIVE" : "GUIDED";
+  return process.env.KAI_MODE?.toUpperCase() === "LIVE_BETA"
+    ? "LIVE_BETA"
+    : "GUIDED";
 }
 
 export function getKaiLiveConfig(): KaiLiveConfig | null {
-  if (getKaiOperatingMode() !== "LIVE" || process.env.KAI_LIVE_ENABLED !== "true" || process.env.KAI_EMERGENCY_SHUTOFF !== "false" || !process.env.OPENAI_API_KEY) return null;
-  const dailyAllowance = positiveInteger("KAI_LIVE_DAILY_ALLOWANCE");
-  const monthlyAllowance = positiveInteger("KAI_LIVE_MONTHLY_ALLOWANCE");
-  const maxInputChars = positiveInteger("KAI_LIVE_MAX_INPUT_CHARS");
-  const maxOutputTokens = positiveInteger("KAI_LIVE_MAX_OUTPUT_TOKENS");
-  const monthlyBudgetCents = positiveInteger("KAI_LIVE_MONTHLY_BUDGET_CENTS");
-  const maxRequestCostMicroUsd = positiveInteger("KAI_LIVE_MAX_REQUEST_COST_MICRO_USD");
-  const inputMicroUsdPerMillionTokens = positiveInteger("KAI_LIVE_INPUT_MICRO_USD_PER_MILLION_TOKENS");
-  const outputMicroUsdPerMillionTokens = positiveInteger("KAI_LIVE_OUTPUT_MICRO_USD_PER_MILLION_TOKENS");
-  const eligibleTiers = new Set((process.env.KAI_LIVE_ELIGIBLE_TIERS ?? "").split(",").map((tier) => tier.trim()).filter(Boolean));
-  if (!dailyAllowance || !monthlyAllowance || !maxInputChars || !maxOutputTokens || !monthlyBudgetCents || !maxRequestCostMicroUsd || !inputMicroUsdPerMillionTokens || !outputMicroUsdPerMillionTokens || !eligibleTiers.size) return null;
-  return { dailyAllowance, monthlyAllowance, maxInputChars, maxOutputTokens, monthlyBudgetMicroUsd: monthlyBudgetCents * 10_000, maxRequestCostMicroUsd, inputMicroUsdPerMillionTokens, outputMicroUsdPerMillionTokens, eligibleTiers };
+  if (
+    getKaiOperatingMode() !== "LIVE_BETA" ||
+    process.env.KAI_LIVE_BETA_ENABLED !== "true" ||
+    process.env.KAI_EMERGENCY_SHUTOFF !== "false" ||
+    !process.env.OPENAI_API_KEY
+  )
+    return null;
+  const dailyAllowance = within(
+    positiveInteger("KAI_LIVE_BETA_DAILY_ALLOWANCE"),
+    100,
+  );
+  const monthlyAllowance = within(
+    positiveInteger("KAI_LIVE_BETA_MONTHLY_ALLOWANCE"),
+    3_000,
+  );
+  const perMinuteAllowance = within(
+    positiveInteger("KAI_LIVE_BETA_PER_MINUTE_ALLOWANCE"),
+    10,
+  );
+  const maxInputChars = within(
+    positiveInteger("KAI_LIVE_BETA_MAX_INPUT_CHARS"),
+    20_000,
+  );
+  const maxOutputTokens = within(
+    positiveInteger("KAI_LIVE_BETA_MAX_OUTPUT_TOKENS"),
+    1_200,
+  );
+  const monthlyBudgetCents = within(
+    positiveInteger("KAI_LIVE_BETA_MONTHLY_BUDGET_CENTS"),
+    10_000,
+  );
+  const maxRequestCostMicroUsd = within(
+    positiveInteger("KAI_LIVE_BETA_MAX_REQUEST_COST_MICRO_USD"),
+    500_000,
+  );
+  const inputMicroUsdPerMillionTokens = positiveInteger(
+    "KAI_LIVE_BETA_INPUT_MICRO_USD_PER_MILLION_TOKENS",
+  );
+  const outputMicroUsdPerMillionTokens = positiveInteger(
+    "KAI_LIVE_BETA_OUTPUT_MICRO_USD_PER_MILLION_TOKENS",
+  );
+  const model = process.env.OPENAI_MODEL?.trim() || "gpt-5-mini";
+  if (
+    !dailyAllowance ||
+    !monthlyAllowance ||
+    !perMinuteAllowance ||
+    !maxInputChars ||
+    maxInputChars < 2_000 ||
+    !maxOutputTokens ||
+    maxOutputTokens < 100 ||
+    !monthlyBudgetCents ||
+    !maxRequestCostMicroUsd ||
+    !inputMicroUsdPerMillionTokens ||
+    !outputMicroUsdPerMillionTokens
+  )
+    return null;
+  return {
+    dailyAllowance,
+    monthlyAllowance,
+    perMinuteAllowance,
+    maxInputChars,
+    maxOutputTokens,
+    monthlyBudgetMicroUsd: monthlyBudgetCents * 10_000,
+    maxRequestCostMicroUsd,
+    inputMicroUsdPerMillionTokens,
+    outputMicroUsdPerMillionTokens,
+    model,
+  };
+}
+
+export function isKaiLiveBetaEntitled(
+  access: KaiBetaAccess | null | undefined,
+) {
+  if (!access || access.entitlement_status !== "active") return false;
+  return (
+    access.platform_role === "owner" || access.kai_live_beta_enabled === true
+  );
+}
+
+export function canAttemptKaiLiveBeta(args: {
+  config: KaiLiveConfig | null;
+  access: KaiBetaAccess | null | undefined;
+  settings: KaiOperationalSettings | null | undefined;
+}) {
+  return Boolean(
+    args.config &&
+    args.settings?.live_beta_enabled === true &&
+    args.settings?.emergency_shutoff === false &&
+    isKaiLiveBetaEntitled(args.access),
+  );
 }
