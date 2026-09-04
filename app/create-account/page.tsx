@@ -12,7 +12,7 @@ export default function CreateAccountPage() {
       <PageHero
         eyebrow="Save your Version Snapshot"
         title="Create your Architect account."
-        copy="Securely save your preliminary Snapshot, then begin the deeper assessment that will shape your BYNV baseline and Blueprint."
+        copy="Save your Version Snapshot, then begin the deeper assessment that will shape your personal Blueprint and next steps."
       />
       <div className="container"><AccountEntry /></div>
     </>

@@ -10,7 +10,7 @@ import { KaiAvatar } from "@/components/kai-avatar";
 
 export const metadata = {
   title: "Architect Blueprint",
-  description: "Your deterministic BYNV starting Blueprint.",
+  description: "Your personal BYNV starting Blueprint.",
 };
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export default async function BlueprintPage() {
       <>
         <PageHero
           eyebrow="Architect Blueprint"
-          title="Your deeper baseline comes first."
+          title="Complete your assessment first."
           copy="Complete the Architect Assessment to generate a Blueprint from your actual responses."
         />
         <div className="container content">
@@ -59,7 +59,7 @@ export default async function BlueprintPage() {
       <PageHero
         eyebrow="Your Architect Blueprint"
         title="A focused starting plan—built from your answers."
-        copy={`Your deeper assessment produced a ${results.score}/100 baseline across seven domains. This is a current-state signal, not a permanent label.`}
+        copy={`Your assessment produced a ${results.score}/100 Version Score across seven areas of life. It reflects where you are now—not who you will always be.`}
       />
       <div className="container blueprint-layout">
         <section className="blueprint-score">
@@ -69,7 +69,7 @@ export default async function BlueprintPage() {
             <span>/100</span>
           </strong>
           <p>
-            Calculated from 35 scored responses. Written reflections provide
+            Calculated from 35 scored answers. Written reflections provide
             context but do not alter the score.
           </p>
         </section>
@@ -125,9 +125,8 @@ export default async function BlueprintPage() {
           </div>
           <p>
             These scores, priorities, and first actions stay in your private
-            account. Guided Kai can use them without a model call; approved Live
-            Kai Beta members may receive more conversational guidance under the
-            same privacy boundaries.
+            account. Kai can use them to help you understand your Blueprint,
+            choose a next step, and stay connected to what matters most.
           </p>
         </section>
       </div>

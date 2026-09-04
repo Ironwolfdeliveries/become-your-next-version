@@ -21,7 +21,7 @@ export function AccountEntry() {
       <div className="account-entry-summary">
         <p className="eyebrow">Your Version Snapshot is ready</p>
         <h2 id="account-entry-heading">{score === null ? "Create your Architect account." : `Your ${score}/100 Snapshot is ready to save.`}</h2>
-        <p>Create a secure account to preserve this introductory result, begin the deeper Architect Assessment, and build your personal baseline.</p>
+        <p>Create a secure account to save this result, begin the deeper Architect Assessment, and build your personal Blueprint.</p>
         <ul className="tick-list compact">
           <li>Save the six area responses and score to your account</li>
           <li>Resume the Architect Assessment across sessions</li>

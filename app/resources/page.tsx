@@ -21,7 +21,7 @@ export default function ResourcesPage() {
       </article>)}
     </section>
     <section className="container resource-next panel">
-      <div><p className="eyebrow">Build from your own signal</p><h2>Make the next resource personal.</h2><p>The free Version Snapshot identifies an initial strength and focus area, then gives you practical next steps based on your six responses.</p></div>
+      <div><p className="eyebrow">Start with where you are</p><h2>Make the next resource personal.</h2><p>The free Version Snapshot identifies one current strength and one area to focus on, then gives you practical next steps based on your six answers.</p></div>
       <Button href="/assessment">Take your Version Snapshot</Button>
     </section>
   </>;

@@ -71,10 +71,10 @@ function explainPage(page: PageContext): GuidedKaiResult {
 
 function nextStep(context: KaiMemberContext, page: PageContext): GuidedKaiResult {
   if (!context.architectAssessment || context.architectAssessment.status !== "completed") {
-    return { answer: "Your most useful next step is to complete—or continue—the Architect Assessment. It establishes the fuller baseline used to build your Blueprint. Your responses save as you go.", nextAction: { href: "/architect-assessment", label: "Continue Architect Assessment" } };
+    return { answer: "Your most useful next step is to complete—or continue—the Architect Assessment. Your answers will shape your Blueprint, and they save as you go.", nextAction: { href: "/architect-assessment", label: "Continue Architect Assessment" } };
   }
   if (!context.blueprint) {
-    return { answer: "Your Architect Assessment is complete, so the next step is to open your Blueprint. BYNV will turn the completed assessment into deterministic priorities and first actions.", nextAction: { href: "/blueprint", label: "Generate my Blueprint" } };
+    return { answer: "Your Architect Assessment is complete, so the next step is to open your Blueprint. BYNV will turn your answers into clear priorities and first actions.", nextAction: { href: "/blueprint", label: "Generate my Blueprint" } };
   }
   if (context.dailyFocus?.action && !context.dailyFocus.completed) {
     return { answer: `Stay with today’s saved action: “${context.dailyFocus.action}” Complete the smallest useful version before adding another priority.`, nextAction: { href: "/daily-focus", label: "Open today’s focus" } };
@@ -104,15 +104,15 @@ function versionScore(context: KaiMemberContext): GuidedKaiResult {
   const fullScore = context.architectAssessment?.version_score;
   const score = typeof fullScore === "number" ? fullScore : snapshot?.score;
   if (typeof score !== "number") {
-    return { answer: "You do not have a saved Version Score yet. The six-question Version Snapshot creates a preliminary signal; the Architect Assessment creates the fuller baseline. It is a reflection tool—not a diagnosis, clinical measure, or permanent label.", nextAction: { href: "/assessment", label: "Take the Version Snapshot" } };
+    return { answer: "You do not have a saved Version Score yet. The six-question Version Snapshot gives you a quick starting point, while the Architect Assessment gives you a fuller view. It is a reflection tool—not a diagnosis, clinical measure, or permanent label.", nextAction: { href: "/assessment", label: "Take the Version Snapshot" } };
   }
   const strengths = recordLabels(context.blueprint?.strengths).concat(recordLabels(snapshot?.strongest_areas));
   const opportunities = recordLabels(context.blueprint?.priorities).concat(recordLabels(snapshot?.opportunity_areas));
-  const strengthText = strengths[0] ? ` Your strongest current signal is ${strengths[0]}.` : "";
+  const strengthText = strengths[0] ? ` Your strongest area right now is ${strengths[0]}.` : "";
   const opportunityText = opportunities[0] ? ` Your clearest opportunity area is ${opportunities[0]}.` : "";
   return {
     answer: `Your saved Version Score is ${score}/100.${strengthText}${opportunityText}\n\nThe number summarizes your own responses at one point in time. It can help you notice patterns and choose a focus. It does not diagnose you, predict your future, measure your worth, or claim scientific or clinical precision.\n\nNext, choose one opportunity area and turn it into a small action you can repeat and review.`,
-    nextAction: context.blueprint ? { href: "/blueprint", label: "Review my Blueprint" } : { href: "/architect-assessment", label: "Build my fuller baseline" },
+    nextAction: context.blueprint ? { href: "/blueprint", label: "Review my Blueprint" } : { href: "/architect-assessment", label: "Complete my full assessment" },
   };
 }
 

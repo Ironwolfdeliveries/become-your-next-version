@@ -8,10 +8,10 @@ export const navigation: NavItem[] = [
 ];
 
 export const pillars = [
-  { number: "01", title: "See clearly", text: "Take an honest snapshot of where you are, without judgement or performance." },
+  { number: "01", title: "See clearly", text: "Take an honest look at where you are, without judging yourself or pretending." },
   { number: "02", title: "Design deliberately", text: "Choose the version you are building and define a direction that feels like yours." },
   { number: "03", title: "Build consistently", text: "Translate intention into a small repeatable action, then learn from what happens." },
-  { number: "04", title: "Evolve continually", text: "Review the signal, refine your system and begin the next meaningful iteration." }
+  { number: "04", title: "Evolve continually", text: "Review what happened, adjust what is not working, and begin the next meaningful step." }
 ];
 
 export const resources = [
@@ -32,12 +32,12 @@ export const products: Product[] = [
 export const faqs = [
   ["What is BYNV?", "Become Your Next Version is a personal growth system that connects reflection, deliberate planning, daily action, and progress review."],
   ["Who are The Architects?", "The Architects is the name of the BYNV community: people choosing to design their next chapter with intention."],
-  ["What is the Version Snapshot?", "The public six-question Version Snapshot is a preliminary signal. It is not the deeper Architect Assessment or your final BYNV baseline."],
+  ["What is the Version Snapshot?", "The public six-question Version Snapshot gives you a quick starting score and focus area. The deeper Architect Assessment builds a fuller picture of where you are now."],
   ["Is the Version Score a diagnosis?", "No. It is a self-reflection aid based on your own answers, not a clinical, medical or scientifically validated assessment."],
-  ["What does membership include?", "Launch Access starts with 30 free days, continues at $19.99/month through day 90, then becomes Foundation at $29.99/month. Builder is $49.99/month, Architect is $99.99/month, Architect Coaching is a separate future $249/month human service, and eligible graduates can later continue at $9.99/month. Credential- or release-dependent benefits are identified on the Membership page."],
-  ["What can Kai do at launch?", "Guided Kai can explain BYNV pages, use permitted account context to suggest a next action, explain Version Scores responsibly, summarize saved progress, support goals, and build portable prompts for an AI assistant you choose. It is not a fully generative chatbot."],
+  ["What does membership include?", "Launch Access starts with 30 free days, continues at $19.99/month through day 90, then becomes Foundation at $29.99/month. Builder is $49.99/month, Architect is $99.99/month, Architect Coaching is a separate future $249/month human service, and eligible graduates can later continue at $9.99/month. The Membership page clearly identifies which benefits are available now and which are planned."],
+  ["What can Kai do?", "Kai can explain BYNV, use the progress and goals you choose to save, suggest a useful next action, help you understand your Version Score and Blueprint, review progress, support goals, and build prompts you can use with another AI assistant."],
   ["Can Kai replace a therapist or professional adviser?", "No. Kai is a reflection and planning guide, not a substitute for medical, mental-health, legal, financial or other qualified professional support."],
   ["Can I buy merchandise now?", "Not yet. The storefront shows real visual mockups and planned retail details, but inventory, fulfillment and checkout are not connected, so BYNV does not accept merchandise payment."],
-  ["What happens when I create an account?", "Your Version Snapshot can be saved, and your Architect Assessment, Blueprint, Daily Focus, goals, journal entries, and progress can persist securely to your account."],
-  ["How is my assessment data used?", "Your responses calculate deterministic scores and organize your private BYNV experience. Guided Kai may use permitted account context to provide structured guidance. Journal entries are excluded." ]
+  ["What happens when I create an account?", "You can save your Version Snapshot and return to your Architect Assessment, Blueprint, Daily Focus, goals, journal entries, and progress from your account."],
+  ["How is my assessment data used?", "Your answers calculate your scores and shape your private BYNV experience. Kai may use the BYNV information you choose to save to give relevant guidance. Journal entries are excluded." ]
 ];

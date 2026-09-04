@@ -20,7 +20,7 @@ export async function sendWelcomeEmail(user: { id: string; email?: string; user_
     to: user.email,
     replyTo: BYNV_CONTACT_EMAIL,
     subject: "Welcome to BYNV, Architect",
-    html: shell("Your BYNV account is ready.", `Welcome, ${name}.`, `<p>Your secure BYNV account is ready. Your Version Snapshot is the opening signal; the deeper Architect Assessment builds the baseline for your Blueprint, Dashboard, Daily Focus, and progress.</p><p>Start with honest answers, not ideal answers. Your result is a point of orientation—not a label.</p>`, { label: "BEGIN MY ARCHITECT ASSESSMENT", href: `${siteUrl}/architect-assessment` }),
+    html: shell("Your BYNV account is ready.", `Welcome, ${name}.`, `<p>Your BYNV account is ready. Your Version Snapshot is your starting point; the deeper Architect Assessment will shape your Blueprint, Dashboard, Daily Focus, and progress.</p><p>Start with honest answers, not ideal answers. Your result is a guide—not a label.</p>`, { label: "BEGIN MY ARCHITECT ASSESSMENT", href: `${siteUrl}/architect-assessment` }),
   });
   await admin.from("email_events").insert({ user_id: user.id, kind: "welcome", provider_id: data?.id ?? null, status: error ? "failed" : "sent" });
   if (error) throw error;

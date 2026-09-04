@@ -24,9 +24,6 @@ export function AskKai() {
     typeof createKaiRequest
   > | null>(null);
   const [answer, setAnswer] = useState("");
-  const [responseMode, setResponseMode] = useState<"GUIDED" | "LIVE_BETA">(
-    "GUIDED",
-  );
   const [aiHandoff, setAiHandoff] = useState<{
     prompt: string;
     customize: string;
@@ -117,7 +114,6 @@ export function AskKai() {
         throw new Error(result.error ?? "Kai could not respond.");
       setAnswer(result.answer);
       setConversationId(result.conversationId ?? conversationId);
-      setResponseMode(result.mode ?? "GUIDED");
       setAiHandoff(result.aiHandoff ?? null);
       setNextAction(result.nextAction ?? page.recommendation);
       setCopyStatus("");
@@ -164,7 +160,7 @@ export function AskKai() {
             <KaiAvatar className="ask-kai-mark" />
             <div>
               <strong>Ask Kai</strong>
-              <small>Kai · page-aware BYNV guidance</small>
+              <small>Keep Advancing Intentionally</small>
             </div>
             <button
               className="ask-kai-close"
@@ -227,8 +223,8 @@ export function AskKai() {
             <p className="ask-kai-status" aria-live="polite">
               {error ||
                 (preparedRequest
-                  ? `${responseMode === "GUIDED" ? "Guided Kai" : "Live Kai Beta"} used ${preparedRequest.context.pageTitle} context.`
-                  : "Guided Kai is always available. Approved beta members may also receive personalized Live Kai responses.")}
+                  ? `Kai used your ${preparedRequest.context.pageTitle} context to guide this response.`
+                  : "Ask about your BYNV journey, priorities, progress, or next step.")}
             </p>
             {answer && (
               <div className="ask-kai-answer" aria-live="polite">

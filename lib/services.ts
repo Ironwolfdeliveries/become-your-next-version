@@ -69,7 +69,7 @@ export function calculateScore(answers: AssessmentAnswers): ScoreResult {
       headline: "This is your starting point—not your ceiling.",
       summary: isBalanced
         ? "Your answers form a balanced pattern across all six areas. There is no single lowest area, so your priorities—not the score—should decide where you focus first."
-        : `Your answers show ${strongestLabel} as your strongest current signal. ${opportunityLabel} offers the clearest place to focus first.`,
+        : `Your answers show ${strongestLabel} as your strongest area right now. ${opportunityLabel} offers the clearest place to focus first.`,
       focus: opportunityFocus,
     },
   };

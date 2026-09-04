@@ -19,7 +19,15 @@ export function MemberWelcome() {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) throw userError ?? new Error("Your session could not be verified.");
         if (!active) return;
-        setName(String(user.user_metadata?.display_name ?? "").trim());
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("id", user.id)
+          .maybeSingle();
+        const preferredName = String(
+          profile?.display_name ?? user.user_metadata?.display_name ?? "",
+        ).trim();
+        setName(preferredName.split(/\s+/)[0] ?? "");
         const pending = await persistPendingVersionSnapshot(user.id);
         const { data } = await supabase.from("version_snapshots").select("score").order("completed_at", { ascending: false }).limit(1).maybeSingle();
         if (!active) return;
@@ -36,10 +44,14 @@ export function MemberWelcome() {
   return (
     <section className="welcome-card" aria-labelledby="welcome-heading">
       <div className="welcome-copy">
-        <p className="eyebrow">Account created</p>
-        <h2 id="welcome-heading">Welcome{name ? `, ${name}` : ""}, Architect.</h2>
-        <p className="lede-small"><strong>Your Version Snapshot is only the beginning.</strong></p>
-        <p>The six-question Snapshot gave BYNV an initial signal{snapshotScore === null ? "." : ` of ${snapshotScore}/100.`} The deeper Architect Assessment is designed to understand your priorities, strengths, friction points, desired next version, and capacity in greater depth.</p>
+        <p className="eyebrow">The Architects</p>
+        <h2 id="welcome-heading">Welcome, Architect.</h2>
+        <p className="lede-small">
+          <strong>
+            {name ? `${name}, this` : "This"} is where you begin building your next version.
+          </strong>
+        </p>
+        <p>The six-question Snapshot gave you a starting point{snapshotScore === null ? "." : ` of ${snapshotScore}/100.`} The deeper Architect Assessment helps you look more closely at your priorities, strengths, obstacles, goals, and available time and energy.</p>
         <p className="save-status" role="status">{status}</p>
         <div className="button-row">
           <Button href="/architect-assessment">Begin my Architect Assessment</Button>
@@ -49,7 +61,7 @@ export function MemberWelcome() {
       <aside className="welcome-aside">
         <KaiAvatar className="kai-result-mark" />
         <p className="eyebrow">What comes next</p>
-        <p>Your deeper responses establish the baseline for your Blueprint. You can leave at any point; progress saves to your account as you go.</p>
+        <p>Your answers will shape your personal Blueprint. You can leave at any point; your progress saves as you go.</p>
       </aside>
     </section>
   );

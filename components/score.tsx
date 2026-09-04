@@ -9,7 +9,7 @@ const continuingValue = [
   "Personal Architect Blueprint",
   "Version Score tracking",
   "Seven Pillar progress",
-  "Guided Kai support",
+  "Personal guidance from Kai",
   "Daily focus and actions",
   "Journaling and reflection",
   "Challenges and guided Architect cycles",
@@ -44,8 +44,8 @@ export function Score() {
         </div>
         <div>
           <p className="eyebrow">Your Version Snapshot · Current focus: {result.focus}</p>
-          <h2 id="version-score-heading">A starting signal for what comes next.</h2>
-          <p className="lede-small">This preliminary Version Score is a 0–100 Snapshot of how you rated six areas of your life today. It is calculated directly from your answers and helps reveal an initial strength and opportunity before the deeper Architect Assessment.</p>
+          <h2 id="version-score-heading">A starting point for what comes next.</h2>
+          <p className="lede-small">This Version Score is a 0–100 Snapshot of how you rated six areas of your life today. It comes directly from your answers and helps you see a current strength and an area that may deserve more attention.</p>
           <p className="lede-small">{result.insight}</p>
         </div>
       </section>
@@ -85,7 +85,7 @@ export function Score() {
       <section className="result-section next-step-plan" aria-labelledby="next-steps-heading">
         <div className="result-section-heading">
           <p className="eyebrow">Your first move</p>
-          <h2 id="next-steps-heading">Turn the signal into a small next step.</h2>
+          <h2 id="next-steps-heading">Turn what you noticed into a small next step.</h2>
         </div>
         <ol className="steps">{result.nextSteps.map((step, i) => <li key={step}><span>0{i + 1}</span>{step}</li>)}</ol>
       </section>
@@ -93,8 +93,8 @@ export function Score() {
       <section className="result-journey" aria-labelledby="journey-heading">
         <div>
           <p className="eyebrow">Your BYNV starting point</p>
-          <h2 id="journey-heading">This Snapshot becomes the first signal in your personal system.</h2>
-          <p>Save it to a secure BYNV account, then complete the deeper Architect Assessment to establish the fuller baseline that will shape your Blueprint, Dashboard, progress tracking, and Guided Kai recommendations.</p>
+          <h2 id="journey-heading">This Snapshot becomes the starting point for your BYNV journey.</h2>
+          <p>Save it to your BYNV account, then complete the deeper Architect Assessment. Your answers will shape your Blueprint, Dashboard, progress tracking, and guidance from Kai.</p>
           <div className="button-row">
             <Button href="/create-account">Save my results &amp; continue</Button>
             <Button href="/assessment" secondary>Retake assessment</Button>
