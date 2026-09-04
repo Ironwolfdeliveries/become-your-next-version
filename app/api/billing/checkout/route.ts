@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
-import { stripePriceForTier, type MembershipTier } from "@/lib/membership";
+import { isBillingLaunchEnabled, stripePriceForTier, type MembershipTier } from "@/lib/membership";
 import { SITE_URL } from "@/lib/site";
 
 export async function POST(request: Request) {
@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     if (!user?.email) return NextResponse.json({ error: "Sign in before changing membership." }, { status: 401 });
     const payload = await request.json() as { tier?: MembershipTier };
     if (payload.tier !== "foundation" && payload.tier !== "builder" && payload.tier !== "architect") return NextResponse.json({ error: "Choose a valid membership." }, { status: 400 });
+    if (!isBillingLaunchEnabled()) return NextResponse.json({ error: "Paid membership is not open yet." }, { status: 503 });
     const priceId = stripePriceForTier(payload.tier);
     if (!priceId || !process.env.STRIPE_SECRET_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: "Paid membership is being activated and cannot accept payment yet." }, { status: 503 });
     const admin = createAdminClient();
