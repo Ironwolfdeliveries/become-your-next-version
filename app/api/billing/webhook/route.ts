@@ -10,7 +10,7 @@ function tierFromPrice(priceId: string | null | undefined) {
   if (priceId && priceId === process.env.STRIPE_BUILDER_PRICE_ID) return "builder";
   if (priceId && priceId === process.env.STRIPE_ARCHITECT_COACHING_PRICE_ID) return "architect_coaching";
   if (priceId && priceId === process.env.STRIPE_GRADUATE_PRICE_ID) return "graduate";
-  return "foundation";
+  return null;
 }
 
 async function ensureFoundationSchedule(subscription: Stripe.Subscription) {
@@ -65,6 +65,7 @@ async function syncSubscription(subscription: Stripe.Subscription) {
   const priceId = subscription.items.data[0]?.price.id ?? null;
   const itemPeriodEnd = subscription.items.data[0]?.current_period_end;
   const tier = tierFromPrice(priceId);
+  if (!tier) throw new Error(`Stripe subscription ${subscription.id} uses an unrecognized BYNV price.`);
   const admin = createAdminClient();
   const { data: membership } = await admin.from("memberships").select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
   const userId = membership?.user_id ?? subscription.metadata.bynv_user_id;
