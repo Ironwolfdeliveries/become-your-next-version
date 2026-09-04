@@ -167,9 +167,9 @@ export default async function AdminPage() {
   const configuredModel = process.env.OPENAI_MODEL?.trim() || "gpt-5-mini";
   const serverGate =
     getKaiOperatingMode() === "LIVE_BETA" &&
-    process.env.KAI_LIVE_BETA_ENABLED === "true" &&
-    process.env.KAI_EMERGENCY_SHUTOFF === "false" &&
-    Boolean(process.env.OPENAI_API_KEY);
+    Boolean(process.env.OPENAI_API_KEY) &&
+    process.env.KAI_LIVE_BETA_ENABLED !== "false" &&
+    process.env.KAI_EMERGENCY_SHUTOFF !== "true";
 
   return (
     <>

@@ -29,57 +29,63 @@ function positiveInteger(name: string) {
   return Number.isSafeInteger(value) && value > 0 ? value : null;
 }
 
+function configuredOrDefault(name: string, fallback: number) {
+  return process.env[name] === undefined ? fallback : positiveInteger(name);
+}
+
 function within(value: number | null, maximum: number) {
   return value && value <= maximum ? value : null;
 }
 
 export function getKaiOperatingMode(): KaiOperatingMode {
-  return process.env.KAI_MODE?.toUpperCase() === "LIVE_BETA"
-    ? "LIVE_BETA"
-    : "GUIDED";
+  return process.env.KAI_MODE?.toUpperCase() === "GUIDED"
+    ? "GUIDED"
+    : "LIVE_BETA";
 }
 
 export function getKaiLiveConfig(): KaiLiveConfig | null {
   if (
     getKaiOperatingMode() !== "LIVE_BETA" ||
-    process.env.KAI_LIVE_BETA_ENABLED !== "true" ||
-    process.env.KAI_EMERGENCY_SHUTOFF !== "false" ||
+    process.env.KAI_LIVE_BETA_ENABLED === "false" ||
+    process.env.KAI_EMERGENCY_SHUTOFF === "true" ||
     !process.env.OPENAI_API_KEY
   )
     return null;
   const dailyAllowance = within(
-    positiveInteger("KAI_LIVE_BETA_DAILY_ALLOWANCE"),
+    configuredOrDefault("KAI_LIVE_BETA_DAILY_ALLOWANCE", 50),
     100,
   );
   const monthlyAllowance = within(
-    positiveInteger("KAI_LIVE_BETA_MONTHLY_ALLOWANCE"),
+    configuredOrDefault("KAI_LIVE_BETA_MONTHLY_ALLOWANCE", 1_000),
     3_000,
   );
   const perMinuteAllowance = within(
-    positiveInteger("KAI_LIVE_BETA_PER_MINUTE_ALLOWANCE"),
+    configuredOrDefault("KAI_LIVE_BETA_PER_MINUTE_ALLOWANCE", 4),
     10,
   );
   const maxInputChars = within(
-    positiveInteger("KAI_LIVE_BETA_MAX_INPUT_CHARS"),
+    configuredOrDefault("KAI_LIVE_BETA_MAX_INPUT_CHARS", 12_000),
     20_000,
   );
   const maxOutputTokens = within(
-    positiveInteger("KAI_LIVE_BETA_MAX_OUTPUT_TOKENS"),
+    configuredOrDefault("KAI_LIVE_BETA_MAX_OUTPUT_TOKENS", 600),
     1_200,
   );
   const monthlyBudgetCents = within(
-    positiveInteger("KAI_LIVE_BETA_MONTHLY_BUDGET_CENTS"),
+    configuredOrDefault("KAI_LIVE_BETA_MONTHLY_BUDGET_CENTS", 1_500),
     10_000,
   );
   const maxRequestCostMicroUsd = within(
-    positiveInteger("KAI_LIVE_BETA_MAX_REQUEST_COST_MICRO_USD"),
+    configuredOrDefault("KAI_LIVE_BETA_MAX_REQUEST_COST_MICRO_USD", 100_000),
     500_000,
   );
-  const inputMicroUsdPerMillionTokens = positiveInteger(
+  const inputMicroUsdPerMillionTokens = configuredOrDefault(
     "KAI_LIVE_BETA_INPUT_MICRO_USD_PER_MILLION_TOKENS",
+    250_000,
   );
-  const outputMicroUsdPerMillionTokens = positiveInteger(
+  const outputMicroUsdPerMillionTokens = configuredOrDefault(
     "KAI_LIVE_BETA_OUTPUT_MICRO_USD_PER_MILLION_TOKENS",
+    2_000_000,
   );
   const model = process.env.OPENAI_MODEL?.trim() || "gpt-5-mini";
   if (

@@ -6,7 +6,6 @@ import {
 import {
   canAttemptKaiLiveBeta,
   getKaiLiveConfig,
-  getKaiOperatingMode,
   isKaiLiveBetaEntitled,
 } from "../lib/kai-mode.ts";
 import { getKaiPageContext } from "../lib/kai-context.ts";
@@ -134,11 +133,21 @@ for (const route of [
 
 delete process.env.KAI_MODE;
 process.env.OPENAI_API_KEY = "present-but-insufficient";
-assert.equal(getKaiOperatingMode(), "GUIDED");
+delete process.env.KAI_LIVE_BETA_ENABLED;
+delete process.env.KAI_EMERGENCY_SHUTOFF;
+const defaultsConfig = getKaiLiveConfig();
+assert.ok(
+  defaultsConfig,
+  "Conservative operational defaults should be available",
+);
 assert.equal(
-  getKaiLiveConfig(),
-  null,
-  "An API key alone must never activate LIVE mode",
+  canAttemptKaiLiveBeta({
+    config: defaultsConfig,
+    access: null,
+    settings: { live_beta_enabled: false, emergency_shutoff: true },
+  }),
+  false,
+  "An API key alone must never authorize a model call",
 );
 
 Object.assign(process.env, {
