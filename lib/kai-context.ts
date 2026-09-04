@@ -1,8 +1,11 @@
 export const KAI_QUICK_ACTIONS = [
-  "Explain this",
+  "Explain this page",
   "What should I do next?",
-  "How does this affect my Version Score?",
-  "What could AI take off my plate?",
+  "Explain my Version Score",
+  "Help with a goal",
+  "Daily guidance",
+  "Review my progress",
+  "Use AI for this",
 ] as const;
 
 export type KaiQuickAction = (typeof KAI_QUICK_ACTIONS)[number];

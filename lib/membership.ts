@@ -6,8 +6,8 @@ export const membershipTiers = {
     label: "Start here",
     description: "A structured entry into BYNV with a clear launch sequence—not a permanently free membership.",
     pricing: ["Days 1–30: $0", "Days 31–90: $19.99/month", "Day 91 onward: $29.99/month"],
-    benefits: ["BYNV platform access", "Version Snapshot and Architect Assessment", "Version Score and personal Blueprint", "Daily OS, goals, journal, cycles, and progress", "AI Delegation Audit with transferable handoff templates", "Core Community, challenges, and progression", "Essential Kai access when live Kai is activated", "Core downloadable resources as released"],
-    availability: "Launch billing remains disabled until secure Stripe products are connected.",
+    benefits: ["BYNV platform access", "Version Snapshot and Architect Assessment", "Version Score and personal Blueprint", "Daily OS, goals, journal, cycles, and progress", "Guided Kai with page-aware and Blueprint-based next-action guidance", "AI prompt builder and transferable handoff templates", "Core Community, challenges, and progression", "Core downloadable resources as released"],
+    availability: "Secure Stripe checkout is available when the production billing connection is healthy.",
   },
   builder: {
     name: "Builder",
@@ -16,8 +16,8 @@ export const membershipTiers = {
     label: "Expanded practice",
     description: "For members ready for deeper tools, guidance, and a more connected progression experience.",
     pricing: [],
-    benefits: ["Everything in Foundation", "Expanded Kai and AI-workflow guidance when live Kai is activated", "Priority Community", "Expanded challenges and guided workflows", "Advanced progress views as released", "Expanded PDF and resource library", "Member merchandise and event discounts when operational", "Priority product support"],
-    availability: "Paid activation awaits secure Stripe configuration.",
+    benefits: ["Everything in Foundation", "Expanded guided Kai and AI-workflow tools as released", "Priority Community", "Expanded challenges and guided workflows", "Advanced progress views as released", "Expanded PDF and resource library", "Member merchandise and event discounts when operational", "Priority product support"],
+    availability: "Secure Stripe checkout is available when the production billing connection is healthy.",
   },
   architect: {
     name: "Architect",
@@ -26,8 +26,8 @@ export const membershipTiers = {
     label: "Advanced membership",
     description: "The advanced BYNV membership for members building with deeper context, resources, and community access.",
     pricing: [],
-    benefits: ["Everything in Builder", "Advanced Kai context when live Kai is activated", "Advanced Blueprint and progression features as released", "Private Architect community experiences when operational", "Expanded resource library", "Higher member merchandise and event discounts when operational", "Priority access to new BYNV tools"],
-    availability: "Paid activation awaits secure Stripe configuration; capacity-dependent experiences are not promised as live today.",
+    benefits: ["Everything in Builder", "Advanced guided Kai context and Blueprint workflows as released", "Advanced Blueprint and progression features as released", "Private Architect community experiences when operational", "Expanded resource library", "Higher member merchandise and event discounts when operational", "Priority access to new BYNV tools"],
+    availability: "Secure Stripe checkout is available when the production billing connection is healthy; capacity-dependent experiences are not promised as live today.",
   },
   architect_coaching: {
     name: "Architect Coaching",

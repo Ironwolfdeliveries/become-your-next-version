@@ -9,7 +9,7 @@ const continuingValue = [
   "Personal Architect Blueprint",
   "Version Score tracking",
   "Seven Pillar progress",
-  "Kai coaching",
+  "Guided Kai support",
   "Daily focus and actions",
   "Journaling and reflection",
   "Challenges and guided Architect cycles",
@@ -94,7 +94,7 @@ export function Score() {
         <div>
           <p className="eyebrow">Your BYNV starting point</p>
           <h2 id="journey-heading">This Snapshot becomes the first signal in your personal system.</h2>
-          <p>Save it to a secure BYNV account, then complete the deeper Architect Assessment to establish the fuller baseline that will shape your Blueprint, Dashboard, progress tracking, and future Kai coaching.</p>
+          <p>Save it to a secure BYNV account, then complete the deeper Architect Assessment to establish the fuller baseline that will shape your Blueprint, Dashboard, progress tracking, and Guided Kai recommendations.</p>
           <div className="button-row">
             <Button href="/create-account">Save my results &amp; continue</Button>
             <Button href="/assessment" secondary>Retake assessment</Button>

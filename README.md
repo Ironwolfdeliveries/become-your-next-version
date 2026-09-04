@@ -56,7 +56,8 @@ Copy `.env.example` to `.env.local`. Account and persistence features require a 
 | `STRIPE_BUILDER_PRICE_ID`, `STRIPE_ARCHITECT_PRICE_ID` | Builder and Architect recurring prices |
 | `STRIPE_ARCHITECT_COACHING_PRICE_ID`, `STRIPE_GRADUATE_PRICE_ID` | Future gated Coaching and eligible Graduate recurring prices |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Branded transactional email; the public reply/support address is centralized in `lib/contact.ts` |
-| `OPENAI_API_KEY`, `OPENAI_MODEL` | Server-side Kai inference; model defaults to `gpt-5-mini` |
+| `KAI_MODE` | Kai operating mode. Launch default is `GUIDED`; an API key alone cannot change it. |
+| `OPENAI_API_KEY`, `OPENAI_MODEL` | Dormant future LIVE-mode inference; not required or used in Guided mode. |
 
 Never prefix secrets with `NEXT_PUBLIC_`. Validate them server-side before enabling a live adapter.
 
@@ -72,4 +73,4 @@ Configure Supabase Auth to use the templates in `supabase/email-templates/` afte
 
 ## Configuration gates
 
-Billing, live Kai, and branded email fail closed until their production credentials are configured. Merchandise remains a visual catalogue without checkout or fulfillment. No scripted response is presented as live Kai coaching, and no transaction is simulated. Version Scores remain educational self-reflection aids—not clinical, diagnostic, medical, or scientifically validated measures. See `/disclaimer` and `/privacy`.
+Billing and branded email fail closed until their production credentials are configured. Kai launches in deterministic, context-aware Guided mode with no per-message model API cost. Future LIVE mode requires an explicit global mode, enable flag, tier eligibility, daily and monthly allowances, input/output limits, a usage ledger, an emergency shutoff, and a configured business spending ceiling; an OpenAI key by itself is insufficient. Merchandise remains a visual catalogue without checkout or fulfillment. Version Scores remain educational self-reflection aids—not clinical, diagnostic, medical, or scientifically validated measures. See `/disclaimer` and `/privacy`.
