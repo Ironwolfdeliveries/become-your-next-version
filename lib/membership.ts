@@ -59,6 +59,10 @@ export function isBillingLaunchEnabled() {
   return process.env.BILLING_LIVE_ENABLED === "true";
 }
 
+export function isStripeTaxLaunchEnabled() {
+  return process.env.STRIPE_TAX_ENABLED === "true";
+}
+
 export function stripePriceForTier(tier: CheckoutTier) {
   if (tier === "foundation") return process.env.STRIPE_FOUNDATION_INTRO_PRICE_ID;
   if (tier === "builder") return process.env.STRIPE_BUILDER_PRICE_ID;
@@ -69,5 +73,5 @@ export function hasBillingConfig(tier: CheckoutTier = "builder") {
   const tierPrices = tier === "foundation"
     ? stripePriceForTier(tier) && process.env.STRIPE_FOUNDATION_PRICE_ID
     : stripePriceForTier(tier);
-  return Boolean(isBillingLaunchEnabled() && process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET && tierPrices);
+  return Boolean(isBillingLaunchEnabled() && isStripeTaxLaunchEnabled() && process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET && tierPrices);
 }

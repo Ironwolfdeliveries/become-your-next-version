@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
-import { isBillingLaunchEnabled, stripePriceForTier, type MembershipTier } from "@/lib/membership";
+import { isBillingLaunchEnabled, isStripeTaxLaunchEnabled, stripePriceForTier, type MembershipTier } from "@/lib/membership";
 import { SITE_URL } from "@/lib/site";
 
 export async function POST(request: Request) {
@@ -14,6 +14,7 @@ export async function POST(request: Request) {
     const payload = await request.json() as { tier?: MembershipTier };
     if (payload.tier !== "foundation" && payload.tier !== "builder" && payload.tier !== "architect") return NextResponse.json({ error: "Choose a valid membership." }, { status: 400 });
     if (!isBillingLaunchEnabled()) return NextResponse.json({ error: "Paid membership is not open yet." }, { status: 503 });
+    if (!isStripeTaxLaunchEnabled()) return NextResponse.json({ error: "Paid membership is not open yet." }, { status: 503 });
     const priceId = stripePriceForTier(payload.tier);
     if (!priceId || !process.env.STRIPE_SECRET_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: "Paid membership is being activated and cannot accept payment yet." }, { status: 503 });
     const admin = createAdminClient();
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
       customer: customerId,
       client_reference_id: user.id,
       line_items: [{ price: priceId, quantity: 1 }],
+      automatic_tax: { enabled: true },
       payment_method_collection: launchSequence ? "always" : "if_required",
       success_url: `${origin}/membership?billing=success`,
       cancel_url: `${origin}/membership?billing=canceled`,
