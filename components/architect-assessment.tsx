@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { architectQuestionCount, architectScoredQuestionCount, architectSections, calculateArchitectResults, type ArchitectAnswers } from "@/lib/architect-assessment";
 import { createClient } from "@/lib/supabase/client";
+import { trackAnalyticsEvent } from "@/lib/analytics-client";
 
 type SaveState = "loading" | "saved" | "saving" | "error";
 
@@ -38,6 +39,7 @@ export function ArchitectAssessment() {
           const { data: created, error: createError } = await supabase.from("architect_assessments").insert({ user_id: user.id, version: 1 }).select("id").single();
           if (createError) throw createError;
           setAssessmentId(created.id);
+          trackAnalyticsEvent("architect_assessment_start");
         }
         hydrated.current = true;
         setSaveState("saved");
@@ -90,7 +92,7 @@ export function ArchitectAssessment() {
       if (await persist(answers, next)) { setSectionIndex(next); window.scrollTo({ top: 0, behavior: "smooth" }); }
       return;
     }
-    if (await persist(answers, sectionIndex, true)) router.push("/blueprint");
+    if (await persist(answers, sectionIndex, true)) { trackAnalyticsEvent("architect_assessment_complete"); router.push("/blueprint"); }
   }
 
   if (saveState === "loading") return <div className="assessment-card" aria-live="polite">Loading your saved assessment…</div>;

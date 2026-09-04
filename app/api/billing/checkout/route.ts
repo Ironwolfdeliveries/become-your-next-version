@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { stripePriceForTier, type MembershipTier } from "@/lib/membership";
+import { SITE_URL } from "@/lib/site";
 
 export async function POST(request: Request) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
       customerId = customer.id;
       await admin.from("memberships").upsert({ user_id: user.id, stripe_customer_id: customerId }, { onConflict: "user_id" });
     }
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
+    const origin = SITE_URL;
     const launchSequence = payload.tier === "foundation";
     const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
       metadata: {
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
     };
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      integration_identifier: "bynv_launch_bynvgoab",
       customer: customerId,
       client_reference_id: user.id,
       line_items: [{ price: priceId, quantity: 1 }],

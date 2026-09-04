@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { membershipTiers, type CheckoutTier, type MembershipTier } from "@/lib/membership";
+import { trackAnalyticsEvent } from "@/lib/analytics-client";
 
 type CurrentMembership = { tier: MembershipTier; status: string; cancel_at_period_end: boolean; stripe_customer_id: string | null; stripe_subscription_id: string | null } | null;
 
@@ -10,6 +11,7 @@ export function MembershipPlans({ signedIn, membership, foundationReady, billing
   const [pending, setPending] = useState(false);
   async function checkout(tier: CheckoutTier) {
     if (!signedIn) { window.location.href = "/sign-in?next=/membership"; return; }
+    trackAnalyticsEvent("checkout_start", { tier });
     setPending(true); setMessage("Opening secure checkout…");
     const response = await fetch("/api/billing/checkout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tier }) });
     const result = await response.json() as { url?: string; error?: string };
@@ -28,7 +30,7 @@ export function MembershipPlans({ signedIn, membership, foundationReady, billing
         <h2>{tier.name}</h2><p className="membership-price"><strong>{tier.price}</strong><span>{tier.cadence}</span></p><p>{tier.description}</p>
         {tier.pricing.length > 0 && <ol className="membership-sequence">{tier.pricing.map((step) => <li key={step}>{step}</li>)}</ol>}
         <ul className="tick-list compact">{tier.benefits.map((benefit) => <li key={benefit}>{benefit}</li>)}</ul>
-        <p className="membership-availability">{tier.availability}</p>
+        <p className="membership-availability">{(key === "foundation" && foundationReady) || (key === "builder" && billingReady) || (key === "architect" && architectReady) ? "Secure Stripe checkout is available." : tier.availability}</p>
         {membership?.tier === key && (membership.status === "active" || membership.status === "trialing") ? <button className="button secondary" type="button" disabled>Current membership</button> : key === "foundation" ? signedIn ? <button className="button secondary" type="button" disabled={pending || !foundationReady || Boolean(membership?.stripe_subscription_id)} onClick={() => void checkout("foundation")}>{foundationReady ? "Start my first 30 days" : "Billing activation pending"}</button> : <a className="button secondary" href="/create-account">Create account to begin</a> : key === "builder" ? <button className="button" type="button" disabled={pending || !billingReady} onClick={() => void checkout("builder")}>{billingReady ? "Choose Builder" : "Billing activation pending"}</button> : key === "architect" ? <button className="button" type="button" disabled={pending || !architectReady} onClick={() => void checkout("architect")}>{architectReady ? "Choose Architect" : "Billing activation pending"}</button> : <button className="button secondary" type="button" disabled>{key === "architect_coaching" ? "Coaching enrollment not open" : "Available after graduation"}</button>}
       </article>)}
     </div>

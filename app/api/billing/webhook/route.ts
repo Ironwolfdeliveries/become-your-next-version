@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
-import { sendBillingIssueEmail } from "@/lib/email";
+import { sendBillingIssueEmail, sendMembershipStatusEmail } from "@/lib/email";
 
 function tierFromPrice(priceId: string | null | undefined) {
   if (priceId && (priceId === process.env.STRIPE_FOUNDATION_INTRO_PRICE_ID || priceId === process.env.STRIPE_FOUNDATION_PRICE_ID)) return "foundation";
@@ -90,8 +90,22 @@ export async function POST(request: Request) {
         const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
         await ensureFoundationSchedule(await getStripe().subscriptions.retrieve(subscriptionId));
       }
+      if (session.metadata?.bynv_user_id) {
+        await createAdminClient().from("analytics_events").insert({ event_type: "checkout_complete", user_id: session.metadata.bynv_user_id, route: "/api/billing/webhook", metadata: { tier: session.metadata.bynv_tier ?? "unknown" } });
+        await sendMembershipStatusEmail(session.metadata.bynv_user_id, event.id, "activated").catch((sendError) => console.error("billing_activation_email_failed", sendError));
+      }
     }
-    if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") await syncSubscription(event.data.object);
+    if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
+      const subscription = event.data.object;
+      await syncSubscription(subscription);
+      if (event.type === "customer.subscription.deleted") {
+        const userId = subscription.metadata.bynv_user_id;
+        if (userId) {
+          await createAdminClient().from("analytics_events").insert({ event_type: "cancellation", user_id: userId, route: "/api/billing/webhook", metadata: { tier: subscription.metadata.bynv_tier ?? "unknown" } });
+          await sendMembershipStatusEmail(userId, event.id, "canceled").catch((sendError) => console.error("billing_cancellation_email_failed", sendError));
+        }
+      }
+    }
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object;
       const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;

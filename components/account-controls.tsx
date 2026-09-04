@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 export function AccountControls({ onNavigate }: { onNavigate?: () => void }) {
   const [signedIn, setSignedIn] = useState(false);
   const [moderator, setModerator] = useState(false);
+  const [admin, setAdmin] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -18,8 +19,9 @@ export function AccountControls({ onNavigate }: { onNavigate?: () => void }) {
     void supabase.auth.getUser().then(async ({ data }) => {
       setSignedIn(Boolean(data.user));
       if (data.user) {
-        const { data: entitlement } = await supabase.from("community_entitlements").select("community_role").eq("user_id", data.user.id).maybeSingle();
+        const [{ data: entitlement }, accessResponse] = await Promise.all([supabase.from("community_entitlements").select("community_role").eq("user_id", data.user.id).maybeSingle(), fetch("/api/account/access")]);
         setModerator(entitlement?.community_role === "moderator" || entitlement?.community_role === "admin");
+        if (accessResponse.ok) setAdmin(Boolean((await accessResponse.json() as { admin?: boolean }).admin));
       }
     });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => setSignedIn(Boolean(session?.user)));
@@ -34,6 +36,6 @@ export function AccountControls({ onNavigate }: { onNavigate?: () => void }) {
     router.refresh();
   }
 
-  if (signedIn) return <><Link aria-current={pathname === "/dashboard" ? "page" : undefined} href="/dashboard" onClick={onNavigate}>Dashboard</Link><Link aria-current={pathname === "/account" ? "page" : undefined} href="/account" onClick={onNavigate}>Account</Link>{moderator && <Link aria-current={pathname.startsWith("/admin/community") ? "page" : undefined} href="/admin/community" onClick={onNavigate}>Moderate</Link>}<button className="nav-account" type="button" onClick={logout}>Log out</button></>;
+  if (signedIn) return <><Link aria-current={pathname === "/dashboard" ? "page" : undefined} href="/dashboard" onClick={onNavigate}>Dashboard</Link><Link aria-current={pathname === "/account" ? "page" : undefined} href="/account" onClick={onNavigate}>Account</Link>{admin && <Link aria-current={pathname === "/admin" ? "page" : undefined} href="/admin" onClick={onNavigate}>Owner</Link>}{moderator && <Link aria-current={pathname.startsWith("/admin/community") ? "page" : undefined} href="/admin/community" onClick={onNavigate}>Moderate</Link>}<button className="nav-account" type="button" onClick={logout}>Log out</button></>;
   return <Link aria-current={pathname === "/sign-in" ? "page" : undefined} href="/sign-in" onClick={onNavigate}>Sign in</Link>;
 }

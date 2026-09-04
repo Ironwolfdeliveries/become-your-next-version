@@ -1,8 +1,9 @@
 import { Button, CTA, Eyebrow, JsonLd, SectionTitle } from "@/components/ui";
 import { pillars, resources } from "@/lib/data";
 import Link from "next/link";
+import { SITE_URL } from "@/lib/site";
 export default function Home() { return <>
-  <JsonLd data={{ "@context": "https://schema.org", "@type": "WebSite", name: "BYNV", url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000" }} />
+  <JsonLd data={{ "@context": "https://schema.org", "@type": "WebSite", name: "BYNV", alternateName: "Become Your Next Version", url: SITE_URL }} />
   <section className="hero"><div className="container hero-grid"><div><Eyebrow>Become Your Next Version</Eyebrow><h1>Don’t find yourself.<br/><em>Design yourself.</em></h1><p className="lede">A deliberate system for seeing where you are, choosing where you’re going and building the person your next chapter requires.</p><div className="button-row"><Button href="/assessment">Take your Version Snapshot</Button><Button href="/framework" secondary>Explore the method</Button></div><p className="micro">Free · 3 minutes · No account required</p></div><div className="hero-orbit" aria-hidden="true"><div className="orbit one"/><div className="orbit two"/><div className="monogram">V<span>∞</span></div><p>Clarity<br/>Direction<br/>Momentum</p></div></div></section>
   <section className="manifesto container"><p>Most people wait for change.</p><h2>The Architects <em>build it.</em></h2><p>BYNV is a personal growth system and member community for people who want to understand where they are, choose what matters next, and turn intention into repeatable action. It is not a quick fix or borrowed motivation.</p></section>
   <section className="section container"><SectionTitle eyebrow="The Architect Method" title="Your growth deserves a blueprint." copy="A grounded cycle for moving from awareness to aligned action—then doing it again, wiser."/><div className="pillar-grid">{pillars.map((p) => <article key={p.number}><span>{p.number}</span><h3>{p.title}</h3><p>{p.text}</p></article>)}</div><Button href="/framework" secondary>How the method works</Button></section>

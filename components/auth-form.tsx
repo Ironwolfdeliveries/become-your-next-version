@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { persistPendingVersionSnapshot } from "@/lib/supabase/snapshot";
+import { trackAnalyticsEvent } from "@/lib/analytics-client";
 
 type Mode = "signup" | "signin";
 
@@ -35,6 +36,7 @@ export function AuthForm({ mode, redirectTo }: { mode: Mode; redirectTo?: string
     if (isSignup && displayName.length > 80) return setMessage("Name must be 80 characters or fewer.");
 
     setPending(true);
+    if (isSignup) trackAnalyticsEvent("signup_start");
     try {
       const supabase = createClient();
       if (isSignup) {
@@ -48,6 +50,7 @@ export function AuthForm({ mode, redirectTo }: { mode: Mode; redirectTo?: string
         });
         if (error) throw error;
         if (data.session && data.user) {
+          trackAnalyticsEvent("signup_complete");
           await persistPendingVersionSnapshot(data.user.id);
           void fetch("/api/email/welcome", { method: "POST" });
           router.replace("/welcome");
