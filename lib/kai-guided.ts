@@ -22,6 +22,133 @@ export type GuidedKaiResult = {
   aiHandoff?: { prompt: string; customize: string };
 };
 
+const URGENT_SAFETY_PATTERNS = [
+  /\b(?:kill(?:ing)?|hurt(?:ing)?|harm(?:ing)?)\s+(?:myself|someone|somebody|another person|him|her|them)\b/i,
+  /\bcut(?:ting)?\s+myself\b(?!\s+some\s+slack)/i,
+  /\b(?:shoot(?:ing)?|stab(?:bing)?|poison(?:ing)?|drown(?:ing)?|hang(?:ing)?|strangl(?:e|ing)|attack(?:ing)?)\s+(?:myself|someone|somebody|another person|him|her|them)\b/i,
+  /\b(?:end|take)\s+my\s+(?:life|own life)\b/i,
+  /\bend\s+it\s+all\b/i,
+  /\b(?:do not|don['’]?t|dont)\s+want\s+to\s+(?:live|be alive|wake up)\b/i,
+  /\b(?:want|wish|hope)\s+(?:to\s+)?(?:die|be dead|not wake up(?!\s+(?:late|early|on\s+time)))\b/i,
+  /\bwish\s+i\s+(?:wasn['’]?t|weren['’]?t|were\s+not)\s+alive\b/i,
+  /\bbetter\s+off\s+dead\b/i,
+  /\b(?:plan|planning|intend|intending|going|about|thinking)\s+(?:about|of|to)?\s*(?:commit(?:ting)?\s+)?suicide\b/i,
+  /\b(?:about|going|planning)\s+to\s+jump\s+(?:off|in front of)\b/i,
+  /\b(?:jump|jumping|throwing myself)\s+(?:off|in front of)\s+(?:a|the|this)?\s*(?:bridge|building|roof|train|traffic)\b/i,
+  /\b(?:pills|medication|tablets)\b[\s\S]{0,80}\b(?:take|swallow)(?:ing)?\s+(?:them\s+)?all\b/i,
+  /\b(?:take|swallow)(?:ing)?\s+(?:all|too many)\b[\s\S]{0,50}\b(?:pills|medication|tablets)\b/i,
+  /\b(?:gun|firearm|weapon)\s+(?:against|to|at)\s+(?:my|the)\s+(?:head|chest)\b/i,
+];
+
+function hasUrgentSafetySignal(message: string, recentMessages: string[]) {
+  const text = message.toLowerCase();
+  const personalSuicideSignal =
+    /\b(?:i\s+am|i['’]?m|im|feel|feeling|been)\s+(?:actively\s+)?(?:suicidal|thinking\s+about\s+suicide)\b/.test(
+      text,
+    ) || /\bmy\s+(?:suicidal\s+thoughts|thoughts\s+of\s+suicide)\b/.test(text);
+  if (personalSuicideSignal) return true;
+  if (URGENT_SAFETY_PATTERNS.some((pattern) => pattern.test(message)))
+    return true;
+  if (
+    /\b(?:cannot|can['’]?t|cant|do not think i can|don['’]?t think i can)\s+keep\s+myself\s+safe\b/.test(
+      text,
+    ) || /\bnot\s+safe\s+(?:from|with)\s+myself\b/.test(text)
+  )
+    return true;
+
+  const educationalContext =
+    /\b(?:warning signs?|symptoms?|definition|define|meaning|statistics?|research|article|essay|school|class|presentation|prevention|awareness|how (?:can|do) i help someone)\b/.test(
+      text,
+    );
+  const threatMatch = text.match(
+    /\bi\s+(?:(?:(?:am|['’]m)\s+)?(?:planning|going|about|ready|intending)\s+(?:to\s+)?|(?:plan|intend|want|will|might|threaten)\s+(?:to\s+)?)(?:kill|hurt|harm|stab|attack|poison|strangle|choke|murder|shoot|hit|beat(?:\s+up)?)\s+([^.!?]{1,60})/,
+  );
+  const threatTarget = threatMatch?.[1]?.trim() ?? "";
+  const threatTargetHead =
+    threatTarget
+      .split(
+        /\b(?:after|before|during|from|because|when|while|if|with|using|through)\b/,
+        1,
+      )[0]
+      ?.trim() ?? "";
+  const benignThreatTarget =
+    /\b(?:less|problem|problems|computer|process|program|server|task|time|video|photo|movie|game|fiction|story|character|song|recipe|garden|weed|weeds|business|sales|career|reputation|procrastination|record|appetite|habit|habits|deadline|deadlines|project|projects|backlog|debt|debts|engine|engines|bug|bugs|workout|workouts|exercise|exercises|routine)\b/.test(
+      threatTargetHead,
+    );
+  if (
+    threatTargetHead &&
+    !benignThreatTarget &&
+    !educationalContext
+  )
+    return true;
+  const runOverThreat =
+    /\bi\s+(?:(?:(?:am|['’]m)\s+)?(?:planning|going|about|ready|intending)\s+(?:to\s+)?|(?:plan|intend|want|will|might)\s+(?:to\s+)?)run\s+([^.!?]{1,40})\s+over\b/.exec(
+      text,
+    );
+  if (
+    runOverThreat?.[1] &&
+    !/\b(?:test|tests|program|simulation|drill)\b/.test(runOverThreat[1])
+  )
+    return true;
+
+  const namesFirearm = /\b(?:loaded\s+)?(?:gun|firearm|weapon)\b/.test(text);
+  const dangerousWeaponUse =
+    /\b(?:plan|planning|intend|intending|going|about|ready|want)\s+to\s+(?:use|fire|shoot|pull)\b/.test(
+      text,
+    ) ||
+    /\b(?:use|fire|shoot)\s+(?:it|this|the\s+(?:gun|firearm|weapon))\s+(?:on|at)\s+(?:myself|someone|somebody|him|her|them|people)\b/.test(
+      text,
+    );
+  const safeWeaponContext = /\b(?:safe storage|store safely|lock(?:ing)? it|gun range|shooting range|target practice|clean(?:ing)? it|unload(?:ing)? it)\b/.test(
+    text,
+  );
+  const dangerousWeaponProximity =
+    /\bloaded\s+(?:gun|firearm|weapon)\b[\s\S]{0,40}\b(?:next to me|beside me|with me|in my hand)\b/.test(
+      text,
+    );
+  if (dangerousWeaponProximity && !safeWeaponContext) return true;
+  if (
+    namesFirearm &&
+    dangerousWeaponUse &&
+    !safeWeaponContext &&
+    !educationalContext
+  )
+    return true;
+
+  const priorText = recentMessages.slice(-2).join("\n").toLowerCase();
+  const priorNamesFirearm = /\b(?:loaded\s+)?(?:gun|firearm|weapon)\b/.test(
+    priorText,
+  );
+  const referentialWeaponIntent = /\b(?:going|about|planning|intend|ready)\s+to\s+(?:use|fire|shoot)\s+(?:it|this)\b/.test(
+    text,
+  );
+  if (priorNamesFirearm && referentialWeaponIntent && !safeWeaponContext)
+    return true;
+
+  const priorNamesMedication = /\b(?:pills|medication|tablets)\b/.test(
+    priorText,
+  );
+  const referentialOverdoseIntent = /\b(?:take|swallow)(?:ing)?\s+(?:them|it)?\s*(?:all|too many)\b|\boverdose\b/.test(
+    text,
+  );
+  return priorNamesMedication && referentialOverdoseIntent;
+}
+
+export function buildKaiSafetyResponse(
+  message: string,
+  recentMessages: string[] = [],
+): GuidedKaiResult | null {
+  if (!hasUrgentSafetySignal(message, recentMessages)) return null;
+  return {
+    answer:
+      "I'm sorry you're dealing with this. Kai is not crisis support. If you or someone else may be in immediate danger, call your local emergency number now (911 in the United States). In the United States and its territories, call or text 988, or use the 988 Lifeline chat. If you can, tell a trusted person nearby and ask them to stay with you while you connect with immediate help.",
+    nextAction: {
+      href: "https://988lifeline.org/",
+      label: "Call, text, or chat with 988",
+    },
+  };
+}
+
 type PageContext = ReturnType<typeof getKaiPageContext>;
 
 const EMPTY_CONTEXT: KaiMemberContext = {

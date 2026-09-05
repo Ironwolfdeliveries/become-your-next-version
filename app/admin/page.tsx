@@ -8,7 +8,7 @@ import {
   isPlatformAdmin,
   type AccountAccess,
 } from "@/lib/admin";
-import { getKaiOperatingMode } from "@/lib/kai-mode";
+import { getKaiLiveConfig } from "@/lib/kai-mode";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
@@ -136,15 +136,18 @@ export default async function AdminPage() {
   const usageRows = (usage.data ?? []) as UsageRow[];
   const liveRows = usageRows.filter((row) => row.mode === "live_beta");
   const guidedRows = usageRows.filter((row) => row.mode === "guided");
-  const completedLive = liveRows.filter(
-    (row) => row.request_status === "completed",
+  const committedLive = liveRows.filter(
+    (row) =>
+      row.request_status === "completed" ||
+      row.request_status === "failed" ||
+      row.request_status === "reserved",
   );
   const liveToday = liveRows.filter((row) => row.created_at >= dayStart).length;
-  const totalTokens = completedLive.reduce(
+  const totalTokens = liveRows.reduce(
     (sum, row) => sum + Number(row.total_tokens ?? 0),
     0,
   );
-  const estimatedCostMicroUsd = completedLive.reduce(
+  const estimatedCostMicroUsd = committedLive.reduce(
     (sum, row) => sum + Number(row.estimated_cost_micro_usd ?? 0),
     0,
   );
@@ -165,11 +168,7 @@ export default async function AdminPage() {
     emergency_shutoff: true,
   };
   const configuredModel = process.env.OPENAI_MODEL?.trim() || "gpt-5-mini";
-  const serverGate =
-    getKaiOperatingMode() === "LIVE_BETA" &&
-    Boolean(process.env.OPENAI_API_KEY) &&
-    process.env.KAI_LIVE_BETA_ENABLED !== "false" &&
-    process.env.KAI_EMERGENCY_SHUTOFF !== "true";
+  const serverGate = Boolean(getKaiLiveConfig());
 
   return (
     <>
@@ -226,11 +225,11 @@ export default async function AdminPage() {
             </article>
             <article>
               <strong>
-                {completedLive.length
+                {committedLive.length
                   ? `$${(estimatedCostMicroUsd / 1_000_000).toFixed(4)}`
                   : "—"}
               </strong>
-              <span>estimated API cost</span>
+              <span>committed API cost</span>
             </article>
             <article>
               <strong>{guidedRows.length}</strong>

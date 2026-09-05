@@ -3,23 +3,31 @@ import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
-import { isBillingLaunchEnabled, isStripeTaxLaunchEnabled, stripePriceForTier, type MembershipTier } from "@/lib/membership";
+import { FOUNDATION_FREE_DAYS, hasBillingConfig, stripePriceForTier, type MembershipTier } from "@/lib/membership";
 import { SITE_URL } from "@/lib/site";
+
+type SupabaseOperationError = { code?: string; message: string } | null;
+
+function assertSupabaseSucceeded(operation: string, error: SupabaseOperationError) {
+  if (!error) return;
+  console.error("billing_database_operation_failed", { operation, code: error.code ?? "unknown" });
+  throw new Error(`${operation} failed.`);
+}
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    assertSupabaseSucceeded("Billing authentication", authError);
     if (!user?.email) return NextResponse.json({ error: "Sign in before changing membership." }, { status: 401 });
     const payload = await request.json() as { tier?: MembershipTier };
     if (payload.tier !== "foundation" && payload.tier !== "builder" && payload.tier !== "architect") return NextResponse.json({ error: "Choose a valid membership." }, { status: 400 });
-    if (!isBillingLaunchEnabled()) return NextResponse.json({ error: "Paid membership is not open yet." }, { status: 503 });
-    if (!isStripeTaxLaunchEnabled()) return NextResponse.json({ error: "Paid membership is not open yet." }, { status: 503 });
-    const priceId = stripePriceForTier(payload.tier);
-    if (!priceId || !process.env.STRIPE_SECRET_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: "Paid membership is being activated and cannot accept payment yet." }, { status: 503 });
+    if (!hasBillingConfig(payload.tier)) return NextResponse.json({ error: "Paid membership is not open yet." }, { status: 503 });
+    const priceId = stripePriceForTier(payload.tier)!;
     const admin = createAdminClient();
     const stripe = getStripe();
-    const { data: existing } = await admin.from("memberships").select("stripe_customer_id,stripe_subscription_id,status").eq("user_id", user.id).maybeSingle();
+    const { data: existing, error: membershipLookupError } = await admin.from("memberships").select("stripe_customer_id,stripe_subscription_id,status").eq("user_id", user.id).maybeSingle();
+    assertSupabaseSucceeded("Membership lookup", membershipLookupError);
     if (existing?.stripe_subscription_id && (existing.status === "active" || existing.status === "trialing" || existing.status === "past_due")) {
       return NextResponse.json({ error: "Use billing management to change an existing membership." }, { status: 409 });
     }
@@ -27,7 +35,8 @@ export async function POST(request: Request) {
     if (!customerId) {
       const customer = await stripe.customers.create({ email: user.email, metadata: { bynv_user_id: user.id } }, { idempotencyKey: `bynv-customer-${user.id}` });
       customerId = customer.id;
-      await admin.from("memberships").upsert({ user_id: user.id, stripe_customer_id: customerId }, { onConflict: "user_id" });
+      const { error: membershipPersistenceError } = await admin.from("memberships").upsert({ user_id: user.id, stripe_customer_id: customerId }, { onConflict: "user_id" });
+      assertSupabaseSucceeded("Membership customer persistence", membershipPersistenceError);
     }
     const origin = SITE_URL;
     const launchSequence = payload.tier === "foundation";
@@ -38,7 +47,7 @@ export async function POST(request: Request) {
         ...(launchSequence ? { bynv_launch_schedule: "foundation-v1" } : {}),
       },
       ...(launchSequence ? {
-        trial_period_days: 30,
+        trial_period_days: FOUNDATION_FREE_DAYS,
         trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
       } : {}),
     };
@@ -46,6 +55,7 @@ export async function POST(request: Request) {
       mode: "subscription",
       integration_identifier: "bynv_launch_bynvgoab",
       customer: customerId,
+      customer_update: { address: "auto" },
       client_reference_id: user.id,
       line_items: [{ price: priceId, quantity: 1 }],
       automatic_tax: { enabled: true },

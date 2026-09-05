@@ -8,8 +8,9 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "npm run lint && npm run typecheck && npm run test:guided-kai",
-    "test:guided-kai": "node --experimental-strip-types test/guided-kai.test.ts"
+    "test": "npm run lint && npm run typecheck && npm run test:guided-kai && npm run test:billing-gate",
+    "test:guided-kai": "node --experimental-strip-types test/guided-kai.test.ts",
+    "test:billing-gate": "node --experimental-strip-types test/billing-gate.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

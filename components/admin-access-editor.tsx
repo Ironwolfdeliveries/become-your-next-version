@@ -25,28 +25,37 @@ export function AdminAccessEditor({
     setPending(true);
     setMessage("Saving…");
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/admin/access", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        userId,
-        platformRole: form.get("platformRole"),
-        entitlementTier: form.get("entitlementTier") || null,
-        status: form.get("status"),
-        kaiLiveBetaEnabled: form.get("kaiLiveBetaEnabled") === "on",
-        reason: form.get("reason"),
-      }),
-    });
-    const result = (await response.json()) as {
-      updated?: boolean;
-      error?: string;
-    };
-    setMessage(
-      result.updated
-        ? "Access saved and recorded in the audit log."
-        : (result.error ?? "Access could not be saved."),
-    );
-    setPending(false);
+    try {
+      const response = await fetch("/api/admin/access", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          platformRole: ownerMode ? form.get("platformRole") : role,
+          entitlementTier: form.get("entitlementTier") || null,
+          status: form.get("status"),
+          kaiLiveBetaEnabled: ownerMode
+            ? form.get("kaiLiveBetaEnabled") === "on"
+            : kaiLiveBetaEnabled,
+          reason: form.get("reason"),
+        }),
+      });
+      let result: { updated?: boolean; error?: string };
+      try {
+        result = (await response.json()) as typeof result;
+      } catch {
+        throw new Error("Access could not be confirmed. Try again.");
+      }
+      if (!response.ok || !result.updated)
+        throw new Error(result.error ?? "Access could not be saved.");
+      setMessage("Access saved and recorded in the audit log.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Access could not be saved.",
+      );
+    } finally {
+      setPending(false);
+    }
   }
   return (
     <form className="admin-access-editor" onSubmit={submit}>
