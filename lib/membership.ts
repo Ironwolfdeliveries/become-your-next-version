@@ -55,6 +55,9 @@ export type MembershipTier = keyof typeof membershipTiers;
 export type CheckoutTier = "foundation" | "builder" | "architect";
 export type MembershipStatus = "free" | "trialing" | "active" | "past_due" | "canceled" | "incomplete" | "paused";
 
+export const FOUNDATION_FREE_DAYS = 30;
+export const FOUNDATION_INTRO_DAYS = 60;
+
 export function isBillingLaunchEnabled() {
   return process.env.BILLING_LIVE_ENABLED === "true";
 }
@@ -73,5 +76,12 @@ export function hasBillingConfig(tier: CheckoutTier = "builder") {
   const tierPrices = tier === "foundation"
     ? stripePriceForTier(tier) && process.env.STRIPE_FOUNDATION_PRICE_ID
     : stripePriceForTier(tier);
-  return Boolean(isBillingLaunchEnabled() && isStripeTaxLaunchEnabled() && process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET && tierPrices);
+  return Boolean(
+    isBillingLaunchEnabled() &&
+    isStripeTaxLaunchEnabled() &&
+    process.env.STRIPE_SECRET_KEY &&
+    process.env.STRIPE_WEBHOOK_SECRET &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY &&
+    tierPrices
+  );
 }

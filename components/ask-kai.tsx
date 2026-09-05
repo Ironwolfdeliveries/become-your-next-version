@@ -7,16 +7,19 @@ import type { FormEvent } from "react";
 import {
   createKaiRequest,
   getKaiPageContext,
+  isKaiAssessmentRequest,
   KAI_QUICK_ACTIONS,
+  KAI_URGENT_SAFETY_KIND,
 } from "@/lib/kai-context";
-import type { KaiQuickAction } from "@/lib/kai-context";
+import type { KaiQuickAction, KaiResponseMode } from "@/lib/kai-context";
 import { KaiAvatar } from "./kai-avatar";
+
+const KAI_CONNECTION_ERROR = "Kai hit a connection issue. Try again in a moment.";
 
 export function AskKai() {
   const pathname = usePathname() || "/";
   const page = getKaiPageContext(pathname);
-  const isAssessment =
-    pathname === "/assessment" || pathname === "/architect-assessment";
+  const isAssessment = isKaiAssessmentRequest(pathname);
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [quickAction, setQuickAction] = useState<KaiQuickAction | null>(null);
@@ -31,6 +34,12 @@ export function AskKai() {
   const [nextAction, setNextAction] = useState(page.recommendation);
   const [copyStatus, setCopyStatus] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [recentMessages, setRecentMessages] = useState<string[]>([]);
+  const [responseKind, setResponseKind] = useState<
+    typeof KAI_URGENT_SAFETY_KIND | null
+  >(null);
+  const [responseMode, setResponseMode] = useState<KaiResponseMode | null>(null);
+  const [sharedSavedContext, setSharedSavedContext] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +64,10 @@ export function AskKai() {
     setNextAction(page.recommendation);
     setCopyStatus("");
     setConversationId(null);
+    setRecentMessages([]);
+    setResponseKind(null);
+    setResponseMode(null);
+    setSharedSavedContext(false);
     setError("");
   }, [page.recommendation, pathname]);
 
@@ -70,6 +83,9 @@ export function AskKai() {
       setAiHandoff(null);
       setCopyStatus("");
       setError("");
+      setResponseKind(null);
+      setResponseMode(null);
+      setSharedSavedContext(false);
     }
     window.addEventListener("bynv:ask-kai", openWithPrompt);
     return () => window.removeEventListener("bynv:ask-kai", openWithPrompt);
@@ -91,34 +107,62 @@ export function AskKai() {
     setPending(true);
     setAnswer("");
     setError("");
+    setResponseKind(null);
+    setResponseMode(null);
+    setSharedSavedContext(false);
     try {
-      const response = await fetch("/api/kai", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          message: request.message,
-          route: pathname,
-          intent: request.intent,
-          conversationId,
-        }),
-      });
-      const result = (await response.json()) as {
+      let response: Response;
+      try {
+        response = await fetch("/api/kai", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            message: request.message,
+            route: pathname,
+            intent: request.intent,
+            conversationId,
+            recentMessages,
+          }),
+        });
+      } catch {
+        throw new Error(KAI_CONNECTION_ERROR);
+      }
+      let result: {
         answer?: string;
-        conversationId?: string;
+        conversationId?: string | null;
         error?: string;
-        mode?: "GUIDED" | "LIVE_BETA";
+        kind?: typeof KAI_URGENT_SAFETY_KIND;
+        mode?: KaiResponseMode;
+        sharedSavedContext?: boolean;
         aiHandoff?: { prompt: string; customize: string };
         nextAction?: { href: string; label: string };
       };
+      try {
+        result = (await response.json()) as typeof result;
+      } catch {
+        throw new Error(KAI_CONNECTION_ERROR);
+      }
       if (!response.ok || !result.answer)
-        throw new Error(result.error ?? "Kai could not respond.");
+        throw new Error(result.error ?? KAI_CONNECTION_ERROR);
       setAnswer(result.answer);
-      setConversationId(result.conversationId ?? conversationId);
+      setConversationId(
+        result.conversationId !== undefined
+          ? result.conversationId
+          : conversationId,
+      );
+      setResponseKind(result.kind ?? null);
+      setResponseMode(result.mode ?? null);
+      setSharedSavedContext(result.sharedSavedContext === true);
       setAiHandoff(result.aiHandoff ?? null);
       setNextAction(result.nextAction ?? page.recommendation);
       setCopyStatus("");
       setPrompt("");
       setQuickAction(null);
+      setRecentMessages((messages) =>
+        result.kind === KAI_URGENT_SAFETY_KIND
+          ? []
+          : [...messages, request.message].slice(-3),
+      );
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -222,9 +266,27 @@ export function AskKai() {
 
             <p className="ask-kai-status" aria-live="polite">
               {error ||
-                (preparedRequest
+                (responseKind === KAI_URGENT_SAFETY_KIND
+                  ? "Kai redirected this request to immediate support resources."
+                  : responseMode === "LIVE_BETA"
+                  ? sharedSavedContext
+                    ? "Kai Live Beta sent this question and task-relevant saved BYNV context to OpenAI."
+                    : "Kai Live Beta sent this question and the current BYNV page context to OpenAI."
+                  : preparedRequest
                   ? `Kai used your ${preparedRequest.context.pageTitle} context to guide this response.`
                   : "Ask about your BYNV journey, priorities, progress, or next step.")}
+            </p>
+            <p className="ask-kai-safety-note">
+              Kai is not emergency or crisis support. In immediate danger,
+              contact local emergency services. In the U.S.,{" "}
+              <a
+                href="https://988lifeline.org/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                call or text 988
+              </a>
+              .
             </p>
             {answer && (
               <div className="ask-kai-answer" aria-live="polite">

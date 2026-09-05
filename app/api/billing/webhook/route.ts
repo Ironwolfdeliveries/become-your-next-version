@@ -3,6 +3,15 @@ import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 import { sendBillingIssueEmail, sendMembershipStatusEmail } from "@/lib/email";
+import { FOUNDATION_INTRO_DAYS } from "@/lib/membership";
+
+type SupabaseOperationError = { code?: string; message: string } | null;
+
+function assertSupabaseSucceeded(operation: string, error: SupabaseOperationError) {
+  if (!error) return;
+  console.error("billing_database_operation_failed", { operation, code: error.code ?? "unknown" });
+  throw new Error(`${operation} failed.`);
+}
 
 function tierFromPrice(priceId: string | null | undefined) {
   if (priceId && (priceId === process.env.STRIPE_FOUNDATION_INTRO_PRICE_ID || priceId === process.env.STRIPE_FOUNDATION_PRICE_ID)) return "foundation";
@@ -35,7 +44,7 @@ async function ensureFoundationSchedule(subscription: Stripe.Subscription) {
         metadata: { bynv_tier: "foundation", bynv_launch_phase: "free" },
       },
       {
-        duration: { interval: "month", interval_count: 2 },
+        duration: { interval: "day", interval_count: FOUNDATION_INTRO_DAYS },
         items: [{ price: introPrice, quantity: 1 }],
         proration_behavior: "none",
         metadata: { bynv_tier: "foundation", bynv_launch_phase: "introductory" },
@@ -50,7 +59,7 @@ async function ensureFoundationSchedule(subscription: Stripe.Subscription) {
   const discountEnd = updated.phases[1]?.end_date;
   const userId = subscription.metadata.bynv_user_id;
   if (!userId) throw new Error("Foundation subscription is not linked to a BYNV member.");
-  await createAdminClient().from("memberships").upsert({
+  const { error: membershipPersistenceError } = await createAdminClient().from("memberships").upsert({
     user_id: userId,
     stripe_customer_id: typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id,
     stripe_subscription_id: subscription.id,
@@ -58,6 +67,7 @@ async function ensureFoundationSchedule(subscription: Stripe.Subscription) {
     launch_free_ends_at: new Date(subscription.trial_end * 1000).toISOString(),
     launch_discount_ends_at: discountEnd ? new Date(discountEnd * 1000).toISOString() : null,
   }, { onConflict: "user_id" });
+  assertSupabaseSucceeded("Foundation schedule persistence", membershipPersistenceError);
 }
 
 async function syncSubscription(subscription: Stripe.Subscription) {
@@ -67,13 +77,28 @@ async function syncSubscription(subscription: Stripe.Subscription) {
   const tier = tierFromPrice(priceId);
   if (!tier) throw new Error(`Stripe subscription ${subscription.id} uses an unrecognized BYNV price.`);
   const admin = createAdminClient();
-  const { data: membership } = await admin.from("memberships").select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
+  const { data: membership, error: membershipLookupError } = await admin.from("memberships").select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
+  assertSupabaseSucceeded("Subscription membership lookup", membershipLookupError);
   const userId = membership?.user_id ?? subscription.metadata.bynv_user_id;
   if (!userId) throw new Error("Stripe subscription is not linked to a BYNV member.");
   const status = subscription.status === "active" || subscription.status === "trialing" ? subscription.status : subscription.status === "past_due" ? "past_due" : subscription.status === "canceled" ? "canceled" : subscription.status === "paused" ? "paused" : "incomplete";
-  await admin.from("memberships").upsert({ user_id: userId, tier, status, stripe_customer_id: customerId, stripe_subscription_id: subscription.id, stripe_price_id: priceId, current_period_end: itemPeriodEnd ? new Date(itemPeriodEnd * 1000).toISOString() : null, cancel_at_period_end: subscription.cancel_at_period_end, last_payment_error: null }, { onConflict: "user_id" });
+  const { error: membershipPersistenceError } = await admin.from("memberships").upsert({ user_id: userId, tier, status, stripe_customer_id: customerId, stripe_subscription_id: subscription.id, stripe_price_id: priceId, current_period_end: itemPeriodEnd ? new Date(itemPeriodEnd * 1000).toISOString() : null, cancel_at_period_end: subscription.cancel_at_period_end, last_payment_error: null }, { onConflict: "user_id" });
+  assertSupabaseSucceeded("Subscription membership persistence", membershipPersistenceError);
   const accessLevel = status === "active" || status === "trialing" ? tier === "architect" ? "mastermind" : tier === "builder" ? "priority" : "community" : "community";
-  await admin.from("community_entitlements").upsert({ user_id: userId, access_level: accessLevel }, { onConflict: "user_id" });
+  const { error: entitlementPersistenceError } = await admin.from("community_entitlements").upsert({ user_id: userId, access_level: accessLevel }, { onConflict: "user_id" });
+  assertSupabaseSucceeded("Subscription entitlement persistence", entitlementPersistenceError);
+}
+
+async function recordInvoiceFailure(invoice: Stripe.Invoice, sourceEventId: string, lastPaymentError: string, markPastDue: boolean) {
+  const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+  if (!customerId) return;
+  const admin = createAdminClient();
+  const { data: membership, error: membershipLookupError } = await admin.from("memberships").select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
+  assertSupabaseSucceeded("Invoice membership lookup", membershipLookupError);
+  const update = markPastDue ? { status: "past_due", last_payment_error: lastPaymentError } : { last_payment_error: lastPaymentError };
+  const { error: membershipPersistenceError } = await admin.from("memberships").update(update).eq("stripe_customer_id", customerId);
+  assertSupabaseSucceeded("Invoice failure persistence", membershipPersistenceError);
+  if (membership?.user_id) await sendBillingIssueEmail(membership.user_id, sourceEventId).catch((sendError) => console.error("billing_email_failed", sendError));
 }
 
 export async function POST(request: Request) {
@@ -86,13 +111,17 @@ export async function POST(request: Request) {
   try {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-      if (session.metadata?.bynv_invitation_id && session.metadata?.bynv_user_id) await createAdminClient().from("architect_invitations").update({ status: "accepted", accepted_by: session.metadata.bynv_user_id, accepted_at: new Date().toISOString() }).eq("id", session.metadata.bynv_invitation_id).eq("status", "pending");
+      if (session.metadata?.bynv_invitation_id && session.metadata?.bynv_user_id) {
+        const { error: invitationPersistenceError } = await createAdminClient().from("architect_invitations").update({ status: "accepted", accepted_by: session.metadata.bynv_user_id, accepted_at: new Date().toISOString() }).eq("id", session.metadata.bynv_invitation_id).eq("status", "pending");
+        assertSupabaseSucceeded("Architect invitation persistence", invitationPersistenceError);
+      }
       if (session.metadata?.bynv_launch_schedule === "foundation-v1" && session.subscription) {
         const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
         await ensureFoundationSchedule(await getStripe().subscriptions.retrieve(subscriptionId));
       }
       if (session.metadata?.bynv_user_id) {
-        await createAdminClient().from("analytics_events").insert({ event_type: "checkout_complete", user_id: session.metadata.bynv_user_id, route: "/api/billing/webhook", metadata: { tier: session.metadata.bynv_tier ?? "unknown" } });
+        const { error: checkoutAnalyticsError } = await createAdminClient().from("analytics_events").insert({ event_type: "checkout_complete", user_id: session.metadata.bynv_user_id, route: "/api/billing/webhook", metadata: { tier: session.metadata.bynv_tier ?? "unknown" } });
+        assertSupabaseSucceeded("Checkout analytics persistence", checkoutAnalyticsError);
         await sendMembershipStatusEmail(session.metadata.bynv_user_id, event.id, "activated").catch((sendError) => console.error("billing_activation_email_failed", sendError));
       }
     }
@@ -102,20 +131,24 @@ export async function POST(request: Request) {
       if (event.type === "customer.subscription.deleted") {
         const userId = subscription.metadata.bynv_user_id;
         if (userId) {
-          await createAdminClient().from("analytics_events").insert({ event_type: "cancellation", user_id: userId, route: "/api/billing/webhook", metadata: { tier: subscription.metadata.bynv_tier ?? "unknown" } });
+          const { error: cancellationAnalyticsError } = await createAdminClient().from("analytics_events").insert({ event_type: "cancellation", user_id: userId, route: "/api/billing/webhook", metadata: { tier: subscription.metadata.bynv_tier ?? "unknown" } });
+          assertSupabaseSucceeded("Cancellation analytics persistence", cancellationAnalyticsError);
           await sendMembershipStatusEmail(userId, event.id, "canceled").catch((sendError) => console.error("billing_cancellation_email_failed", sendError));
         }
       }
     }
-    if (event.type === "invoice.payment_failed") {
+    if (event.type === "invoice.payment_failed" || event.type === "invoice.finalization_failed") {
       const invoice = event.data.object;
-      const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
-      if (customerId) {
-        const admin = createAdminClient();
-        const { data: membership } = await admin.from("memberships").select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
-        await admin.from("memberships").update({ status: "past_due", last_payment_error: "Payment failed. Update the payment method in billing management." }).eq("stripe_customer_id", customerId);
-        if (membership?.user_id) await sendBillingIssueEmail(membership.user_id, event.id).catch((sendError) => console.error("billing_email_failed", sendError));
-      }
+      const finalizationFailed = event.type === "invoice.finalization_failed";
+      const finalizationMessage = invoice.last_finalization_error?.code === "customer_tax_location_invalid"
+        ? "Billing address could not be verified for tax calculation. Update the billing address in billing management."
+        : "Billing could not finalize the latest invoice. Review billing details in billing management.";
+      await recordInvoiceFailure(
+        invoice,
+        event.id,
+        finalizationFailed ? finalizationMessage : "Payment failed. Update the payment method in billing management.",
+        !finalizationFailed,
+      );
     }
     return NextResponse.json({ received: true });
   } catch (error) {

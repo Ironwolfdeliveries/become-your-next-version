@@ -10,6 +10,9 @@ export const KAI_QUICK_ACTIONS = [
 
 export type KaiQuickAction = (typeof KAI_QUICK_ACTIONS)[number];
 
+export const KAI_URGENT_SAFETY_KIND = "urgent-safety" as const;
+export type KaiResponseMode = "GUIDED" | "LIVE_BETA";
+
 type KaiPageContext = {
   title: string;
   purpose: string;
@@ -56,15 +59,102 @@ const fallbackContext: KaiPageContext = {
   recommendation: { href: "/", label: "Return to BYNV home" },
 };
 
+export function normalizeKaiPath(pathname: string) {
+  if (!pathname.startsWith("/")) return "/";
+  const pathOnly = pathname.split(/[?#]/, 1)[0] ?? "/";
+  return pathOnly === "/" ? pathOnly : pathOnly.replace(/\/+$/, "") || "/";
+}
+
+export function isKaiAssessmentRequest(
+  pathname: string,
+  message = "",
+  recentMessages: string[] = [],
+) {
+  const route = normalizeKaiPath(pathname);
+  if (route === "/assessment" || route === "/architect-assessment")
+    return true;
+  const text = message.toLowerCase();
+
+  function seeksAssessmentAnswer(value: string) {
+    const namesAssessment = /\b(?:assessment|snapshot)\b/.test(value);
+    if (!namesAssessment) return false;
+    const strongResponseReference =
+      /\b(?:answer|response|number|score|rate|rating|option|choice|[1-5])\b/.test(
+        value,
+      ) || /\b1\s*(?:-|–|to)\s*5\b/.test(value);
+    const selectionLanguage =
+      /\b(?:choose|pick|select|recommend|suggest|answer|respond|mark|rate)\b/.test(
+        value,
+      ) ||
+      /\b(?:fill|complete)\s+(?:out\s+)?(?:the\s+|my\s+)?(?:assessment|snapshot)\s+for\s+me\b/.test(
+        value,
+      ) ||
+      /\b(?:ideal|best|right)\s+(?:answers?|responses?|choices?|options?)\b/.test(
+        value,
+      );
+    const asksForFit =
+      strongResponseReference &&
+      /\bdo\s+you\s+think\b|\b(?:fits?|matches?|right|best)\s+(?:for\s+)?me\b/.test(
+        value,
+      );
+    const directAnswerRequest =
+      /\b(?:which|what)\s+(?:answer|response|number|score|rating|option)\s+(?:should|do)\s+i\s+(?:choose|pick|select|use|mark)\b/.test(
+        value,
+      );
+    const selectsDifferentObject =
+      /\b(?:choose|pick|select|recommend|suggest)\b[\s\S]{0,30}\b(?:goal|plan|priority|focus|membership|tier|email|task|habit|action)\b|\b(?:goal|plan|priority|focus|membership|tier|email|task|habit|action)\b[\s\S]{0,30}\b(?:choose|pick|select|recommend|suggest)\b/.test(
+        value,
+      );
+    const explicitAssessmentItem =
+      /\b(?:assessment|snapshot)\b[\s\S]{0,30}\b(?:answer|response|question|item|choice|option|1\s*(?:-|–|to)\s*5)\b|\b(?:answer|response|question|item|choice|option|1\s*(?:-|–|to)\s*5)\b[\s\S]{0,30}\b(?:assessment|snapshot)\b/.test(
+        value,
+      );
+    if (selectsDifferentObject && !explicitAssessmentItem) return false;
+    return selectionLanguage || asksForFit || directAnswerRequest;
+  }
+
+  if (text.split(/[.!?;\n]+/).some(seeksAssessmentAnswer)) return true;
+  const activeAssessmentContext = recentMessages.slice(-1).some((item) => {
+    const prior = item.toLowerCase();
+    return (
+      /\b(?:doing|taking|working on|filling out|answering|in the middle of)\b[\s\S]{0,60}\b(?:assessment|snapshot)\b/.test(
+        prior,
+      ) ||
+      /\b(?:assessment|snapshot)\b[\s\S]{0,60}\b(?:question|item|right now|currently)\b/.test(
+        prior,
+      )
+    );
+  });
+  const followUpAnswerRequest =
+    (/\bdo\s+you\s+think\b|\b(?:fits?|matches?|right|best)\s+(?:for\s+)?me\b/.test(
+      text,
+    ) && /\b(?:answer|response|number|score|rate|rating|[1-5])\b/.test(text)) ||
+    (/\b(?:choose|pick|select|answer|respond|mark|rate)\b/.test(text) &&
+      /\b(?:answer|response|number|score|rate|rating|[1-5])\b/.test(text));
+  const genericSelectionFollowUp =
+    /\b(?:what|which\s+(?:one|option|choice))\s+(?:should|would|do)\s+i\s+(?:choose|pick|select|put|mark|answer)\b|\b(?:choose|pick|select|answer|fill\s+(?:it\s+)?out)\s+(?:it\s+)?for\s+me\b|\btell\s+me\s+what\s+to\s+(?:choose|pick|select|put|mark|answer)\b/.test(
+      text,
+    );
+  const selectsDifferentObject =
+    /\b(?:choose|pick|select|recommend|suggest)\b[\s\S]{0,30}\b(?:goal|plan|priority|focus|membership|tier|email|task|habit|action)\b|\b(?:goal|plan|priority|focus|membership|tier|email|task|habit|action)\b[\s\S]{0,30}\b(?:choose|pick|select|recommend|suggest)\b/.test(
+      text,
+    );
+  return (
+    activeAssessmentContext &&
+    !selectsDifferentObject &&
+    (followUpAnswerRequest || genericSelectionFollowUp)
+  );
+}
+
 export function getKaiPageContext(pathname: string) {
-  const normalizedPath = pathname !== "/" ? pathname.replace(/\/$/, "") : pathname;
+  const normalizedPath = normalizeKaiPath(pathname);
   if (normalizedPath.startsWith("/community/rooms/")) return pageContexts["/community"];
   return pageContexts[normalizedPath] ?? fallbackContext;
 }
 
 export function createKaiRequest(message: string, pathname: string, quickAction: KaiQuickAction | null) {
   const page = getKaiPageContext(pathname);
-  const isAssessment = pathname === "/assessment" || pathname === "/architect-assessment";
+  const isAssessment = isKaiAssessmentRequest(pathname, message);
 
   return {
     message: message.trim(),

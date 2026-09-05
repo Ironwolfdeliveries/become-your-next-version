@@ -21,6 +21,34 @@ Do not delete the launch campaign below. Keep it ready until the owner gives the
 - Contact: `becomeyournextversion@gmail.com`
 - Visual identity: black/charcoal, restrained gold, approved Architect branding, and the approved Kai humanoid where Kai is the speaker or guide.
 
+## Mandatory platform and queue audit during the hold
+
+Do not rely on an earlier status report. Inspect the actual current state of every available BYNV publishing account and tool, including Facebook, Instagram, YouTube, TikTok, X, Buffer, Meta Business Suite, and any other connected scheduler.
+
+For every platform or scheduler:
+
+1. Review what is already published, scheduled, queued, and saved as a draft.
+2. Pause, cancel, or remove every scheduled, queued, or draft item that asks people to sign up, create an account, begin Launch Access or a trial, choose a membership, enter billing information, or join the member Community.
+3. Check captions, graphics, video text, spoken calls to action, profile buttons, destinations, and first comments—not only the post title.
+4. Keep or schedule only material that clearly fits PRE-LAUNCH AWARENESS.
+5. Record the platform, item, prior state, action taken, verification date, and verifier. If access is unavailable, record the platform as unverified rather than assuming its queue is clear.
+
+Repeat this audit before adding a new batch of posts and immediately before public launch. The hold is not verified merely because this document was updated.
+
+### Queue audit record — 2026-09-05
+
+No authenticated publishing account or scheduler connection was available in the current BYNV workspace. The hold therefore remains unverified rather than assumed clear.
+
+| Platform or scheduler | Current status | Action | Verification date | Verifier |
+| --- | --- | --- | --- | --- |
+| Facebook | Unverified — account access unavailable | No queue mutation; hold maintained | 2026-09-05 | Codex |
+| Instagram | Unverified — account access unavailable | No queue mutation; hold maintained | 2026-09-05 | Codex |
+| YouTube | Unverified — account access unavailable | No queue mutation; hold maintained | 2026-09-05 | Codex |
+| TikTok | Unverified — account access unavailable | No queue mutation; hold maintained | 2026-09-05 | Codex |
+| X | Unverified — account access unavailable | No queue mutation; hold maintained | 2026-09-05 | Codex |
+| Buffer | Unverified — scheduler access unavailable | No queue mutation; hold maintained | 2026-09-05 | Codex |
+| Meta Business Suite | Unverified — scheduler access unavailable | No queue mutation; hold maintained | 2026-09-05 | Codex |
+
 ## Published-post handling
 
 Keep educational, motivational, Architect, Kai, goal-setting, and general BYNV awareness posts live.
@@ -33,7 +61,7 @@ When an existing caption can be edited without removing the post, replace conver
 - Learn what BYNV is.
 - Be ready for your Version Snapshot.
 
-Do not delete or archive a published post unless it materially misleads customers and cannot reasonably be corrected.
+Do not delete or archive a published post unless it materially misleads customers and cannot reasonably be corrected. A specific owner instruction to remove a post overrides this default preservation rule.
 
 ## Pre-launch publishing sequence
 
@@ -99,6 +127,14 @@ Not more noise. More clarity about what to do next.
 - **One useful action:** a realistic step someone can take today.
 - **Inside the build:** a truthful preview of why BYNV is being built, without claiming public signup is open.
 
+## Founder-led content standard
+
+Founder material should periodically add Daniel's real perspective to the automated content system. Appropriate themes include why BYNV exists, what Daniel is learning as BYNV User #1, lessons from building it, what “Become Your Next Version” means in practice, and genuine setbacks, corrections, and improvements.
+
+AI may polish, structure, shorten, or repurpose source material Daniel actually supplied. It must never fabricate his quotations, experiences, beliefs, outcomes, setbacks, or lessons. If authentic source material is unavailable, publish useful non-founder educational content instead of imitating a founder story.
+
+Founder posts must still provide a practical lesson or useful next step. “Building in public” is not valuable by itself.
+
 ## Platform notes
 
 - Instagram: carousels and concise Reels built from the pre-launch sequence.
@@ -110,6 +146,16 @@ Not more noise. More clarity about what to do next.
 ## HOLD — conversion launch campaign
 
 Do not publish the following until the owner says **PUBLIC LAUNCH APPROVED**.
+
+Any future post, ad, profile button, landing page, or checkout message that uses “free,” states a membership price, or invites Launch Access must make the material terms clear before a person begins Checkout:
+
+- The Version Snapshot is free and requires neither an account nor a payment method.
+- Launch Access requires an account and a payment method.
+- Launch Access has no membership charge for the first 30 consecutive days, followed by exactly 60 consecutive days at $19.99 per month, then $29.99 per month beginning on day 91.
+- The membership renews automatically at the applicable monthly rate until canceled.
+- Applicable tax may be added based on the member's location.
+
+Do not shorten “exactly 60 consecutive days” to “two months.” Before releasing this campaign, verify that the live Stripe schedule, Checkout disclosures, cancellation path, and tax calculation match these statements.
 
 ### Launch post 1 — What BYNV is
 
@@ -127,7 +173,7 @@ The Architect Assessment is the deeper member baseline: 42 questions across seve
 
 One helps you start. The other helps you build.
 
-**CTA:** Start free. No account required for the Snapshot. Launch Access begins with 30 free days; the published membership sequence applies only after account creation and secure billing activation.
+**CTA:** Take the Version Snapshot free—no account or payment method required. Beginning Launch Access requires an account and payment method. There is no membership charge for the first 30 days; it then renews at $19.99 per month for exactly 60 days and at $29.99 per month beginning on day 91 until canceled. Applicable tax may be added based on location.
 
 ### Launch post 3 — The Architect identity
 
@@ -135,7 +181,7 @@ An Architect does not pretend to control every outcome. An Architect chooses wha
 
 The Architects community is for mutual growth, useful accountability, and meaningful progress—not performance or artificial status.
 
-**CTA:** Begin Launch Access and enter the Community. The first 30 days are free, days 31–90 are $19.99/month, and Foundation is $29.99/month from day 91 once billing is activated.
+**CTA:** Begin Launch Access and enter the Community. An account and payment method are required. There is no membership charge for the first 30 days; membership then renews at $19.99 per month for exactly 60 days and at $29.99 per month beginning on day 91 until canceled. Applicable tax may be added based on location.
 
 ## Launch content bank
 

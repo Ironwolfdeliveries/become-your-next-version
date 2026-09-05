@@ -19,7 +19,7 @@ const tiers: EntitlementTier[] = [
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export async function POST(request: Request) {
+async function handleAccessUpdate(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -33,7 +33,22 @@ export async function POST(request: Request) {
       { status: 403 },
     );
 
-  const body = (await request.json()) as {
+  let value: unknown;
+  try {
+    value = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid access change." },
+      { status: 400 },
+    );
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return NextResponse.json(
+      { error: "Invalid access change." },
+      { status: 400 },
+    );
+
+  const body = value as {
     userId?: string;
     platformRole?: PlatformRole;
     entitlementTier?: EntitlementTier | null;
@@ -49,7 +64,9 @@ export async function POST(request: Request) {
     (body.entitlementTier !== null &&
       body.entitlementTier !== undefined &&
       !tiers.includes(body.entitlementTier)) ||
-    (body.status !== "active" && body.status !== "paused")
+    (body.status !== "active" && body.status !== "paused") ||
+    typeof body.kaiLiveBetaEnabled !== "boolean" ||
+    (body.reason !== undefined && typeof body.reason !== "string")
   ) {
     return NextResponse.json(
       { error: "Invalid access change." },
@@ -76,25 +93,19 @@ export async function POST(request: Request) {
       .slice(0, 500) || null;
   const admin = createAdminClient();
   const currentAccess = await getAccountAccess(body.userId);
+  if (
+    actorAccess?.platform_role !== "owner" &&
+    currentAccess &&
+    currentAccess?.platform_role !== "member"
+  )
+    return NextResponse.json(
+      { error: "Only the owner can change an elevated account." },
+      { status: 403 },
+    );
   const kaiLiveBetaEnabled =
     actorAccess?.platform_role === "owner"
       ? body.kaiLiveBetaEnabled === true
       : (currentAccess?.kai_live_beta_enabled ?? false);
-  const { error } = await admin
-    .from("account_access")
-    .upsert(
-      {
-        user_id: body.userId,
-        platform_role: body.platformRole,
-        entitlement_tier: body.entitlementTier ?? null,
-        entitlement_status: body.status,
-        kai_live_beta_enabled: kaiLiveBetaEnabled,
-        reason,
-        granted_by: user.id,
-      },
-      { onConflict: "user_id" },
-    );
-  if (error) throw error;
   const communityAccess =
     body.entitlementTier === "architect" ||
     body.entitlementTier === "architect_coaching"
@@ -106,29 +117,29 @@ export async function POST(request: Request) {
     body.platformRole === "owner" || body.platformRole === "admin"
       ? "admin"
       : "member";
-  await admin
-    .from("community_entitlements")
-    .upsert(
-      {
-        user_id: body.userId,
-        access_level: communityAccess,
-        community_role: communityRole,
-      },
-      { onConflict: "user_id" },
-    );
-  await admin
-    .from("admin_audit_events")
-    .insert({
-      actor_user_id: user.id,
-      target_user_id: body.userId,
-      action: "account_access_updated",
-      details: {
-        platform_role: body.platformRole,
-        entitlement_tier: body.entitlementTier ?? null,
-        entitlement_status: body.status,
-        kai_live_beta_enabled: kaiLiveBetaEnabled,
-        reason,
-      },
-    });
+  const { error } = await admin.rpc("admin_update_account_access", {
+    p_actor_user_id: user.id,
+    p_target_user_id: body.userId,
+    p_platform_role: body.platformRole,
+    p_entitlement_tier: body.entitlementTier ?? null,
+    p_entitlement_status: body.status,
+    p_kai_live_beta_enabled: kaiLiveBetaEnabled,
+    p_reason: reason,
+    p_community_access_level: communityAccess,
+    p_community_role: communityRole,
+  });
+  if (error) throw error;
   return NextResponse.json({ updated: true });
+}
+
+export async function POST(request: Request) {
+  try {
+    return await handleAccessUpdate(request);
+  } catch (error) {
+    console.error("admin_access_update_failed", error);
+    return NextResponse.json(
+      { error: "Access could not be updated or audited." },
+      { status: 500 },
+    );
+  }
 }

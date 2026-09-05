@@ -24,6 +24,28 @@ export type KaiLiveConfig = {
   model: string;
 };
 
+export type KaiUsageSettlement = {
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostMicroUsd: number;
+};
+
+export type KaiUsageLedgerFields = {
+  input_tokens?: number;
+  output_tokens?: number;
+  estimated_cost_micro_usd?: number;
+};
+
+const DEFAULT_KAI_MODEL = "gpt-5-mini";
+const SUPPORTED_KAI_MODELS = new Set([DEFAULT_KAI_MODEL]);
+const MIN_INPUT_MICRO_USD_PER_MILLION_TOKENS = 250_000;
+const MIN_OUTPUT_MICRO_USD_PER_MILLION_TOKENS = 2_000_000;
+// The request character budget excludes Kai's fixed instructions and message
+// framing. Four tokens per character plus this fixed allowance deliberately
+// over-reserves rather than allowing an underestimated request through.
+const MAX_INPUT_TOKENS_PER_CHARACTER = 4;
+const FIXED_INPUT_TOKEN_ALLOWANCE = 16_384;
+
 function positiveInteger(name: string) {
   const value = Number(process.env[name]);
   return Number.isSafeInteger(value) && value > 0 ? value : null;
@@ -37,18 +59,45 @@ function within(value: number | null, maximum: number) {
   return value && value <= maximum ? value : null;
 }
 
+function calculateCostMicroUsd(
+  inputTokens: number,
+  outputTokens: number,
+  inputMicroUsdPerMillionTokens: number,
+  outputMicroUsdPerMillionTokens: number,
+) {
+  if (
+    !Number.isSafeInteger(inputTokens) ||
+    inputTokens < 0 ||
+    !Number.isSafeInteger(outputTokens) ||
+    outputTokens < 0
+  )
+    return null;
+  const inputCost = inputTokens * inputMicroUsdPerMillionTokens;
+  const outputCost = outputTokens * outputMicroUsdPerMillionTokens;
+  const combinedCost = inputCost + outputCost;
+  if (
+    !Number.isSafeInteger(inputCost) ||
+    !Number.isSafeInteger(outputCost) ||
+    !Number.isSafeInteger(combinedCost)
+  )
+    return null;
+  return Math.ceil(combinedCost / 1_000_000);
+}
+
 export function getKaiOperatingMode(): KaiOperatingMode {
-  return process.env.KAI_MODE?.toUpperCase() === "GUIDED"
-    ? "GUIDED"
-    : "LIVE_BETA";
+  return process.env.KAI_MODE?.toUpperCase() === "LIVE_BETA"
+    ? "LIVE_BETA"
+    : "GUIDED";
 }
 
 export function getKaiLiveConfig(): KaiLiveConfig | null {
   if (
     getKaiOperatingMode() !== "LIVE_BETA" ||
-    process.env.KAI_LIVE_BETA_ENABLED === "false" ||
-    process.env.KAI_EMERGENCY_SHUTOFF === "true" ||
-    !process.env.OPENAI_API_KEY
+    process.env.KAI_LIVE_BETA_ENABLED !== "true" ||
+    process.env.KAI_EMERGENCY_SHUTOFF !== "false" ||
+    !process.env.OPENAI_API_KEY?.trim() ||
+    !process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
   )
     return null;
   const dailyAllowance = within(
@@ -81,13 +130,13 @@ export function getKaiLiveConfig(): KaiLiveConfig | null {
   );
   const inputMicroUsdPerMillionTokens = configuredOrDefault(
     "KAI_LIVE_BETA_INPUT_MICRO_USD_PER_MILLION_TOKENS",
-    250_000,
+    MIN_INPUT_MICRO_USD_PER_MILLION_TOKENS,
   );
   const outputMicroUsdPerMillionTokens = configuredOrDefault(
     "KAI_LIVE_BETA_OUTPUT_MICRO_USD_PER_MILLION_TOKENS",
-    2_000_000,
+    MIN_OUTPUT_MICRO_USD_PER_MILLION_TOKENS,
   );
-  const model = process.env.OPENAI_MODEL?.trim() || "gpt-5-mini";
+  const model = process.env.OPENAI_MODEL?.trim() || DEFAULT_KAI_MODEL;
   if (
     !dailyAllowance ||
     !monthlyAllowance ||
@@ -99,7 +148,28 @@ export function getKaiLiveConfig(): KaiLiveConfig | null {
     !monthlyBudgetCents ||
     !maxRequestCostMicroUsd ||
     !inputMicroUsdPerMillionTokens ||
-    !outputMicroUsdPerMillionTokens
+    inputMicroUsdPerMillionTokens <
+      MIN_INPUT_MICRO_USD_PER_MILLION_TOKENS ||
+    !outputMicroUsdPerMillionTokens ||
+    outputMicroUsdPerMillionTokens <
+      MIN_OUTPUT_MICRO_USD_PER_MILLION_TOKENS ||
+    !SUPPORTED_KAI_MODELS.has(model)
+  )
+    return null;
+  const monthlyBudgetMicroUsd = monthlyBudgetCents * 10_000;
+  const maximumInputTokens =
+    maxInputChars * MAX_INPUT_TOKENS_PER_CHARACTER +
+    FIXED_INPUT_TOKEN_ALLOWANCE;
+  const minimumRequestReserveMicroUsd = calculateCostMicroUsd(
+    maximumInputTokens,
+    maxOutputTokens,
+    inputMicroUsdPerMillionTokens,
+    outputMicroUsdPerMillionTokens,
+  );
+  if (
+    minimumRequestReserveMicroUsd === null ||
+    maxRequestCostMicroUsd < minimumRequestReserveMicroUsd ||
+    maxRequestCostMicroUsd > monthlyBudgetMicroUsd
   )
     return null;
   return {
@@ -108,12 +178,50 @@ export function getKaiLiveConfig(): KaiLiveConfig | null {
     perMinuteAllowance,
     maxInputChars,
     maxOutputTokens,
-    monthlyBudgetMicroUsd: monthlyBudgetCents * 10_000,
+    monthlyBudgetMicroUsd,
     maxRequestCostMicroUsd,
     inputMicroUsdPerMillionTokens,
     outputMicroUsdPerMillionTokens,
     model,
   };
+}
+
+export function getKaiUsageSettlement(
+  config: KaiLiveConfig,
+  usage:
+    | { input_tokens?: number | null; output_tokens?: number | null }
+    | null
+    | undefined,
+): KaiUsageSettlement | null {
+  if (
+    !usage ||
+    !Number.isSafeInteger(usage.input_tokens) ||
+    !Number.isSafeInteger(usage.output_tokens)
+  )
+    return null;
+  const inputTokens = usage.input_tokens as number;
+  const outputTokens = usage.output_tokens as number;
+  const estimatedCostMicroUsd = calculateCostMicroUsd(
+    inputTokens,
+    outputTokens,
+    config.inputMicroUsdPerMillionTokens,
+    config.outputMicroUsdPerMillionTokens,
+  );
+  if (estimatedCostMicroUsd === null) return null;
+  return { inputTokens, outputTokens, estimatedCostMicroUsd };
+}
+
+export function getKaiUsageLedgerFields(
+  settlement: KaiUsageSettlement | null,
+  releaseUnsettledReserve: boolean,
+): KaiUsageLedgerFields {
+  if (settlement)
+    return {
+      input_tokens: settlement.inputTokens,
+      output_tokens: settlement.outputTokens,
+      estimated_cost_micro_usd: settlement.estimatedCostMicroUsd,
+    };
+  return releaseUnsettledReserve ? { estimated_cost_micro_usd: 0 } : {};
 }
 
 export function isKaiLiveBetaEntitled(
