@@ -22,14 +22,17 @@ function tierFromPrice(priceId: string | null | undefined) {
   return null;
 }
 
-async function ensureFoundationSchedule(subscription: Stripe.Subscription) {
+async function ensureFoundationSchedule(subscription: Stripe.Subscription, sourceEventId: string) {
   const introPrice = process.env.STRIPE_FOUNDATION_INTRO_PRICE_ID;
   const standardPrice = process.env.STRIPE_FOUNDATION_PRICE_ID;
   if (!introPrice || !standardPrice || !subscription.trial_end) throw new Error("Foundation launch prices or trial end are missing.");
   const stripe = getStripe();
   const schedule = subscription.schedule
     ? await stripe.subscriptionSchedules.retrieve(typeof subscription.schedule === "string" ? subscription.schedule : subscription.schedule.id)
-    : await stripe.subscriptionSchedules.create({ from_subscription: subscription.id });
+    : await stripe.subscriptionSchedules.create(
+        { from_subscription: subscription.id },
+        { idempotencyKey: `bynv-foundation-create-${sourceEventId}` },
+      );
   if (!schedule.current_phase) throw new Error("Foundation schedule has no current phase.");
   const updated = await stripe.subscriptionSchedules.update(schedule.id, {
     end_behavior: "release",
@@ -55,7 +58,7 @@ async function ensureFoundationSchedule(subscription: Stripe.Subscription) {
         metadata: { bynv_tier: "foundation", bynv_launch_phase: "standard" },
       },
     ],
-  });
+  }, { idempotencyKey: `bynv-foundation-update-${sourceEventId}` });
   const discountEnd = updated.phases[1]?.end_date;
   const userId = subscription.metadata.bynv_user_id;
   if (!userId) throw new Error("Foundation subscription is not linked to a BYNV member.");
@@ -117,10 +120,10 @@ export async function POST(request: Request) {
       }
       if (session.metadata?.bynv_launch_schedule === "foundation-v1" && session.subscription) {
         const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
-        await ensureFoundationSchedule(await getStripe().subscriptions.retrieve(subscriptionId));
+        await ensureFoundationSchedule(await getStripe().subscriptions.retrieve(subscriptionId), event.id);
       }
       if (session.metadata?.bynv_user_id) {
-        const { error: checkoutAnalyticsError } = await createAdminClient().from("analytics_events").insert({ event_type: "checkout_complete", user_id: session.metadata.bynv_user_id, route: "/api/billing/webhook", metadata: { tier: session.metadata.bynv_tier ?? "unknown" } });
+        const { error: checkoutAnalyticsError } = await createAdminClient().from("analytics_events").upsert({ event_type: "checkout_complete", source_event_id: event.id, user_id: session.metadata.bynv_user_id, route: "/api/billing/webhook", metadata: { tier: session.metadata.bynv_tier ?? "unknown" } }, { onConflict: "source_event_id", ignoreDuplicates: true });
         assertSupabaseSucceeded("Checkout analytics persistence", checkoutAnalyticsError);
         await sendMembershipStatusEmail(session.metadata.bynv_user_id, event.id, "activated").catch((sendError) => console.error("billing_activation_email_failed", sendError));
       }
@@ -131,7 +134,7 @@ export async function POST(request: Request) {
       if (event.type === "customer.subscription.deleted") {
         const userId = subscription.metadata.bynv_user_id;
         if (userId) {
-          const { error: cancellationAnalyticsError } = await createAdminClient().from("analytics_events").insert({ event_type: "cancellation", user_id: userId, route: "/api/billing/webhook", metadata: { tier: subscription.metadata.bynv_tier ?? "unknown" } });
+          const { error: cancellationAnalyticsError } = await createAdminClient().from("analytics_events").upsert({ event_type: "cancellation", source_event_id: event.id, user_id: userId, route: "/api/billing/webhook", metadata: { tier: subscription.metadata.bynv_tier ?? "unknown" } }, { onConflict: "source_event_id", ignoreDuplicates: true });
           assertSupabaseSucceeded("Cancellation analytics persistence", cancellationAnalyticsError);
           await sendMembershipStatusEmail(userId, event.id, "canceled").catch((sendError) => console.error("billing_cancellation_email_failed", sendError));
         }
