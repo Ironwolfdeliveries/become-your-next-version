@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) void sendWelcomeEmail(user).catch((sendError) => console.error("welcome_email_failed", sendError));
+      if (user) await sendWelcomeEmail(user).catch((sendError) => console.error("welcome_email_failed", sendError));
       return NextResponse.redirect(new URL(next, url.origin));
     }
   }
