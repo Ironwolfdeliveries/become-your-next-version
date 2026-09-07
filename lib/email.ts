@@ -4,6 +4,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const siteUrl = "https://www.becomeyournextversion.com";
 
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character] ?? character);
+}
+
 function shell(preview: string, heading: string, body: string, action?: { label: string; href: string }) {
   return `<!doctype html><html><body style="margin:0;background:#0b0b0b;color:#f1eadc;font-family:Arial,sans-serif"><div style="display:none;max-height:0;overflow:hidden">${preview}</div><div style="max-width:620px;margin:auto;padding:44px 24px"><div style="color:#c6a15b;letter-spacing:.18em;font-size:12px;font-weight:700">BYNV · BECOME YOUR NEXT VERSION</div><h1 style="font-family:Georgia,serif;font-size:42px;line-height:1.05;font-weight:500;margin:28px 0 18px">${heading}</h1><div style="color:#cfc7ba;font-size:16px;line-height:1.7">${body}</div>${action ? `<p style="margin-top:30px"><a href="${action.href}" style="display:inline-block;background:#c6a15b;color:#0b0b0b;padding:14px 20px;text-decoration:none;font-weight:700;letter-spacing:.05em">${action.label}</a></p>` : ""}<p style="border-top:1px solid #39342c;margin-top:42px;padding-top:22px;color:#817a70;font-size:12px">Build deliberately. Review honestly. Become your next version.</p></div></body></html>`;
 }
@@ -13,7 +23,7 @@ export async function sendWelcomeEmail(user: { id: string; email?: string; user_
   const admin = createAdminClient();
   const { data: prior } = await admin.from("email_events").select("id").eq("user_id", user.id).eq("kind", "welcome").in("status", ["sent", "delivered"]).maybeSingle();
   if (prior) return { sent: false, reason: "already-sent" as const };
-  const name = user.user_metadata?.display_name?.trim() || "Architect";
+  const name = escapeHtml(user.user_metadata?.display_name?.trim() || "Architect");
   const resend = new Resend(process.env.RESEND_API_KEY);
   const { data, error } = await resend.emails.send({
     from: process.env.EMAIL_FROM,
