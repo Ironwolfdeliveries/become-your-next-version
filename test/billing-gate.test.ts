@@ -92,6 +92,9 @@ try {
   }
 
   const webhookSource = readFileSync(new URL("../app/api/billing/webhook/route.ts", import.meta.url), "utf8");
+  assert.match(webhookSource, /source_event_id: event\.id/, "Stripe webhook analytics must be idempotent by event ID");
+  assert.match(webhookSource, /idempotencyKey: `bynv-foundation-create-\$\{sourceEventId\}`/, "Foundation schedule creation must be idempotent");
+  assert.match(webhookSource, /idempotencyKey: `bynv-foundation-update-\$\{sourceEventId\}`/, "Foundation schedule updates must be idempotent");
   for (const operation of [
     "Foundation schedule persistence",
     "Subscription membership lookup",
