@@ -38,6 +38,25 @@ export async function POST(request: Request) {
       const { error: membershipPersistenceError } = await admin.from("memberships").upsert({ user_id: user.id, stripe_customer_id: customerId }, { onConflict: "user_id" });
       assertSupabaseSucceeded("Membership customer persistence", membershipPersistenceError);
     }
+    // The member row serializes reservations across tabs and tiers. A stable
+    // reservation also fixes expires_at, keeping Stripe retries identical.
+    const { data: reservation, error: reservationError } = await admin.rpc("reserve_billing_checkout", { p_user_id: user.id, p_tier: payload.tier });
+    assertSupabaseSucceeded("Checkout reservation", reservationError);
+    const attempt = reservation as { blocked: boolean; attempt_id?: string; tier?: string; expires_at?: number } | null;
+    if (!attempt || attempt.blocked) return NextResponse.json({ error: "Use billing management for your existing subscription." }, { status: 409 });
+    if (attempt.tier !== payload.tier) return NextResponse.json({ error: "A checkout for another membership is already open. Complete that checkout or wait for it to expire before choosing another plan." }, { status: 409 });
+    if (!attempt.attempt_id || !attempt.expires_at) throw new Error("Checkout reservation is incomplete.");
+    // Check Stripe too: a completed Checkout can precede its membership webhook.
+    const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 });
+    if (subscriptions.data.some((subscription) => subscription.status !== "canceled" && subscription.status !== "incomplete_expired")) {
+      return NextResponse.json({ error: "Your subscription is being synchronized. Use billing management once it appears." }, { status: 409 });
+    }
+    const openSessions = await stripe.checkout.sessions.list({ customer: customerId, status: "open", limit: 100 });
+    const openSession = openSessions.data.find((session) => session.mode === "subscription");
+    if (openSession) {
+      if (openSession.metadata?.bynv_tier === payload.tier && openSession.url) return NextResponse.json({ url: openSession.url });
+      return NextResponse.json({ error: "Another membership checkout is already open." }, { status: 409 });
+    }
     const origin = SITE_URL;
     const launchSequence = payload.tier === "foundation";
     const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
@@ -53,6 +72,7 @@ export async function POST(request: Request) {
     };
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      expires_at: attempt.expires_at,
       integration_identifier: "bynv_launch_bynvgoab",
       customer: customerId,
       billing_address_collection: "required",
@@ -69,7 +89,7 @@ export async function POST(request: Request) {
         bynv_tier: payload.tier,
         ...(launchSequence ? { bynv_launch_schedule: "foundation-v1" } : {}),
       },
-    });
+    }, { idempotencyKey: `bynv-checkout-${attempt.attempt_id}` });
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("billing_checkout_failed", error);
