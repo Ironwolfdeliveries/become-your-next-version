@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       mode: "subscription",
       integration_identifier: "bynv_launch_bynvgoab",
       customer: customerId,
+      billing_address_collection: "required",
       customer_update: { address: "auto" },
       client_reference_id: user.id,
       line_items: [{ price: priceId, quantity: 1 }],

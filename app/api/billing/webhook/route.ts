@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 import { sendBillingIssueEmail, sendMembershipStatusEmail } from "@/lib/email";
 import { FOUNDATION_INTRO_DAYS } from "@/lib/membership";
+import { subscriptionAccess } from "@/lib/billing-access";
 
 type SupabaseOperationError = { code?: string; message: string } | null;
 
@@ -87,7 +88,7 @@ async function syncSubscription(subscription: Stripe.Subscription) {
   const status = subscription.status === "active" || subscription.status === "trialing" ? subscription.status : subscription.status === "past_due" ? "past_due" : subscription.status === "canceled" ? "canceled" : subscription.status === "paused" ? "paused" : "incomplete";
   const { error: membershipPersistenceError } = await admin.from("memberships").upsert({ user_id: userId, tier, status, stripe_customer_id: customerId, stripe_subscription_id: subscription.id, stripe_price_id: priceId, current_period_end: itemPeriodEnd ? new Date(itemPeriodEnd * 1000).toISOString() : null, cancel_at_period_end: subscription.cancel_at_period_end, last_payment_error: null }, { onConflict: "user_id" });
   assertSupabaseSucceeded("Subscription membership persistence", membershipPersistenceError);
-  const accessLevel = status === "active" || status === "trialing" ? tier === "architect" ? "mastermind" : tier === "builder" ? "priority" : "community" : "community";
+  const accessLevel = subscriptionAccess(tier, status);
   const { error: entitlementPersistenceError } = await admin.from("community_entitlements").upsert({ user_id: userId, access_level: accessLevel }, { onConflict: "user_id" });
   assertSupabaseSucceeded("Subscription entitlement persistence", entitlementPersistenceError);
 }
@@ -101,6 +102,10 @@ async function recordInvoiceFailure(invoice: Stripe.Invoice, sourceEventId: stri
   const update = markPastDue ? { status: "past_due", last_payment_error: lastPaymentError } : { last_payment_error: lastPaymentError };
   const { error: membershipPersistenceError } = await admin.from("memberships").update(update).eq("stripe_customer_id", customerId);
   assertSupabaseSucceeded("Invoice failure persistence", membershipPersistenceError);
+  if (markPastDue && membership?.user_id) {
+    const { error: entitlementError } = await admin.from("community_entitlements").upsert({ user_id: membership.user_id, access_level: "community" }, { onConflict: "user_id" });
+    assertSupabaseSucceeded("Invoice failure entitlement persistence", entitlementError);
+  }
   if (membership?.user_id) await sendBillingIssueEmail(membership.user_id, sourceEventId).catch((sendError) => console.error("billing_email_failed", sendError));
 }
 
@@ -129,7 +134,9 @@ export async function POST(request: Request) {
       }
     }
     if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
-      const subscription = event.data.object;
+      // Stripe does not guarantee event ordering. Resolve current state so a
+      // delayed active event cannot restore access after cancellation/failure.
+      const subscription = await getStripe().subscriptions.retrieve(event.data.object.id);
       await syncSubscription(subscription);
       if (event.type === "customer.subscription.deleted") {
         const userId = subscription.metadata.bynv_user_id;
