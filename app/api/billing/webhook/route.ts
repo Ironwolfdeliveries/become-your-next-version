@@ -55,7 +55,11 @@ async function ensureFoundationSchedule(subscription: Stripe.Subscription, sourc
       },
       {
         items: [{ price: standardPrice, quantity: 1 }],
-        proration_behavior: "none",
+        // The introductory period is 60 days, not two calendar months.
+        // Start standard billing at that boundary and credit any remaining
+        // time already paid for at the introductory monthly rate.
+        billing_cycle_anchor: "phase_start",
+        proration_behavior: "create_prorations",
         metadata: { bynv_tier: "foundation", bynv_launch_phase: "standard" },
       },
     ],
@@ -86,7 +90,10 @@ async function syncSubscription(subscription: Stripe.Subscription) {
   const userId = membership?.user_id ?? subscription.metadata.bynv_user_id;
   if (!userId) throw new Error("Stripe subscription is not linked to a BYNV member.");
   const status = subscription.status === "active" || subscription.status === "trialing" ? subscription.status : subscription.status === "past_due" ? "past_due" : subscription.status === "canceled" ? "canceled" : subscription.status === "paused" ? "paused" : "incomplete";
-  const { error: membershipPersistenceError } = await admin.from("memberships").upsert({ user_id: userId, tier, status, stripe_customer_id: customerId, stripe_subscription_id: subscription.id, stripe_price_id: priceId, current_period_end: itemPeriodEnd ? new Date(itemPeriodEnd * 1000).toISOString() : null, cancel_at_period_end: subscription.cancel_at_period_end, last_payment_error: null }, { onConflict: "user_id" });
+  // Stripe can represent a scheduled portal cancellation with cancel_at,
+  // including subscriptions managed by a launch schedule.
+  const cancellationScheduled = subscription.cancel_at_period_end || Boolean(subscription.cancel_at);
+  const { error: membershipPersistenceError } = await admin.from("memberships").upsert({ user_id: userId, tier, status, stripe_customer_id: customerId, stripe_subscription_id: subscription.id, stripe_price_id: priceId, current_period_end: itemPeriodEnd ? new Date(itemPeriodEnd * 1000).toISOString() : null, cancel_at_period_end: cancellationScheduled, last_payment_error: null }, { onConflict: "user_id" });
   assertSupabaseSucceeded("Subscription membership persistence", membershipPersistenceError);
   const accessLevel = subscriptionAccess(tier, status);
   const { error: entitlementPersistenceError } = await admin.from("community_entitlements").upsert({ user_id: userId, access_level: accessLevel }, { onConflict: "user_id" });
