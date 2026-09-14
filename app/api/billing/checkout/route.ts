@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { FOUNDATION_FREE_DAYS, hasBillingConfig, stripePriceForTier, type MembershipTier } from "@/lib/membership";
 import { SITE_URL } from "@/lib/site";
+import { getAccountAccess, isPlatformAdmin } from "@/lib/admin";
 
 type SupabaseOperationError = { code?: string; message: string } | null;
 
@@ -20,6 +21,8 @@ export async function POST(request: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     assertSupabaseSucceeded("Billing authentication", authError);
     if (!user?.email) return NextResponse.json({ error: "Sign in before changing membership." }, { status: 401 });
+    const access = await getAccountAccess(user.id);
+    if (isPlatformAdmin(access) && access?.entitlement_status === "active" && access.entitlement_tier) return NextResponse.json({ error: "Owner QA access is internal and does not require a paid subscription." }, { status: 409 });
     const payload = await request.json() as { tier?: MembershipTier };
     if (payload.tier !== "foundation" && payload.tier !== "builder" && payload.tier !== "architect") return NextResponse.json({ error: "Choose a valid membership." }, { status: 400 });
     if (!hasBillingConfig(payload.tier)) return NextResponse.json({ error: "Paid membership is not open yet." }, { status: 503 });

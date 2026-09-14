@@ -1,4 +1,4 @@
-import { Button } from "./ui";
+import { JourneyLink } from "@/components/member-journey";
 import { KaiAvatar } from "./kai-avatar";
 export function KaiDemo() {
   return (
@@ -22,7 +22,7 @@ export function KaiDemo() {
             you can take now—then help you make that action manageable.
           </p>
         </div>
-        <Button href="/create-account">Begin my BYNV journey</Button>
+        <JourneyLink anonymousLabel="Begin my BYNV journey" />
       </div>
       <p className="fine-print">
         Kai uses only permitted BYNV context. Journal entries remain private

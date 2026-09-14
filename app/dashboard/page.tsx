@@ -1,24 +1,27 @@
 import { redirect } from "next/navigation";
-import { architectScoredQuestionCount, type ArchitectAnswers } from "@/lib/architect-assessment";
 import { createClient } from "@/lib/supabase/server";
+import { getJourneyContext, getMemberJourney } from "@/lib/member-journey";
+import { cycleProgress, nextJourneyAction } from "@/lib/journey";
+import { getAccountAccess, isPlatformAdmin } from "@/lib/admin";
 import { Button, PageHero } from "@/components/ui";
-
-export const metadata = { title: "Architect Dashboard", description: "Your secure BYNV member dashboard." };
+import { KaiPrompt } from "@/components/kai-prompt";
+export const metadata = { title: "My BYNV", description: "Your cycle, today's action, and your next step." };
 export const dynamic = "force-dynamic";
-
 export default async function Dashboard() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
-  const [{ data: profile }, { data: snapshot }, { data: assessment }, { data: focus }] = await Promise.all([
-    supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
-    supabase.from("version_snapshots").select("score,completed_at").eq("user_id", user.id).order("completed_at", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("architect_assessments").select("status,answers,version_score,updated_at").eq("user_id", user.id).eq("version", 1).maybeSingle(),
-    supabase.from("daily_focus_entries").select("priority,action,completed").eq("user_id", user.id).eq("focus_date", new Date().toISOString().slice(0, 10)).maybeSingle(),
-  ]);
-  const answers = (assessment?.answers as ArchitectAnswers | null) ?? {};
-  const answered = Object.values(answers).filter((value) => typeof value === "number").length;
-  const assessmentComplete = assessment?.status === "completed";
-  const firstName = String(profile?.display_name ?? user.user_metadata?.display_name ?? "").trim().split(/\s+/)[0];
-  return <><PageHero eyebrow={firstName ? `Welcome, ${firstName}` : "Welcome, Architect"} title="Your next step, visible." copy="Use your dashboard to continue your assessment, act on today’s priority, connect with other Architects, and review your progress over time." /><section className="container member-dashboard"><article className="panel dashboard-primary"><p className="eyebrow">Architect Assessment</p><h2>{assessmentComplete ? "Your full assessment is ready." : answered ? "Continue where you left off." : "Build a clearer picture of where you are."}</h2><p>{assessmentComplete ? `Full Version Score: ${assessment.version_score}/100. Your Blueprint is ready to guide your first focus.` : `${answered} of ${architectScoredQuestionCount} scored prompts answered. Your answers save as you go.`}</p><Button href={assessmentComplete ? "/blueprint" : "/architect-assessment"}>{assessmentComplete ? "Open my Blueprint" : answered ? "Resume assessment" : "Begin assessment"}</Button></article><article className="panel"><p className="eyebrow">Version Snapshot</p><h2>{snapshot ? `${snapshot.score}/100` : "Not saved"}</h2><p className="muted">{snapshot ? "Your six-question starting point is saved." : "Complete the Version Snapshot to see where you are today."}</p><Button href={snapshot ? "/version-score" : "/assessment"} secondary>{snapshot ? "Review Snapshot" : "Take Snapshot"}</Button></article><article className="panel"><p className="eyebrow">Today&apos;s focus</p><h2>{focus?.priority || "Choose one priority."}</h2><p className="muted">{focus?.action || "Turn the priority into one action you can complete today."}</p><Button href="/daily-focus" secondary>{focus ? "Open Daily Focus" : "Set Daily Focus"}</Button></article><article className="panel community-dashboard-card"><p className="eyebrow">The Architects</p><h2>Growth is personal. It does not have to be solitary.</h2><p>Join private member Rooms for useful accountability, shared challenges, milestones, and conversations across the seven areas of BYNV.</p><Button href="/community" secondary>Enter Community</Button></article><article className="panel dashboard-tools"><p className="eyebrow">Your Architect system</p><div className="dashboard-links"><Button href="/journal" secondary>Journal</Button><Button href="/goals" secondary>Goals</Button><Button href="/challenges" secondary>Challenges</Button><Button href="/community" secondary>Community</Button><Button href="/architect-cycle" secondary>Architect Cycle</Button><Button href="/progress" secondary>Progress</Button><Button href="/feedback" secondary>First Circle feedback</Button></div></article></section></>;
+  const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) redirect("/sign-in");
+  const [state, context, access] = await Promise.all([getMemberJourney(), getJourneyContext(user.id), getAccountAccess(user.id)]);
+  const next = nextJourneyAction(state); const progress = context.cycle ? cycleProgress(context.cycle.starts_on, context.cycle.ends_on) : null;
+  return <><PageHero eyebrow="My BYNV" title={context.cycle ? "Your next version is in motion." : "Your next step, visible."} copy="One priority. One action you can take today. Space to learn and adjust." />
+    <section className="container member-dashboard">
+      <article className="panel dashboard-primary"><p className="eyebrow">{context.cycle ? "Current Architect Cycle" : state.assessmentComplete ? "Your Blueprint → Your first cycle" : "Architect Assessment"}</p><h2>{context.cycle?.focus || context.priority || next.title}</h2>
+        {progress && <><p>Day {progress.day} of {progress.total}{progress.reviewDue ? " · Ready to reflect and review" : ""}</p><progress className="journey-progress" value={progress.day} max={progress.total} aria-label="Cycle progress" /></>}
+        <p>{context.daily?.action || context.firstAction || next.copy}</p>
+        {context.daily?.completed && <p className="journey-milestone">Today&apos;s action completed. Capture what you learned.</p>}
+        <Button href={next.href}>{context.cycle ? "Continue today's work" : next.label}</Button>
+        <p className="field-help">{context.cycle ? "Action → completion → reflection. Keep the next step yours." : state.assessmentComplete ? "Begin with a 14-day cycle. Your Blueprint provides a starting focus." : "Your answers save as you go."}</p>
+      </article>
+      <article className="panel"><p className="eyebrow">Your direction</p><h2>{state.assessmentComplete ? "Your Blueprint" : "Your assessment"}</h2><p>{context.priority || "Complete the full assessment to identify your priorities."}</p><Button href={state.assessmentComplete ? "/blueprint" : "/architect-assessment"} secondary>{state.assessmentComplete ? "Return to my Blueprint" : "Continue assessment"}</Button></article>
+      <article className="panel"><p className="eyebrow">Kai · Keep advancing intentionally</p><h2>A useful next step, not more noise.</h2><p>Ask Kai to connect your saved priority, cycle, and action. Private journal content stays excluded.</p><KaiPrompt prompt="Based on my Blueprint, current cycle, and today's focus, what should I do next?">Ask Kai for today&apos;s guidance</KaiPrompt></article>
+      <article className="panel dashboard-tools"><p className="eyebrow">Supporting tools</p><div className="dashboard-links">{[["/journal","Journal"],["/goals","Goals"],["/challenges","Challenges"],["/community","Community"],["/architect-cycle","My cycle"],["/resources","Resources"],["/progress","Progress & reassessment"]].map(([href,label])=><Button key={href} href={href} secondary>{label}</Button>)}{isPlatformAdmin(access) && <Button href="/coaching" secondary>Coaching · Owner QA</Button>}</div></article>
+    </section></>;
 }

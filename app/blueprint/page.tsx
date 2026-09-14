@@ -6,6 +6,8 @@ import {
 import { createBlueprint } from "@/lib/blueprint";
 import { createClient } from "@/lib/supabase/server";
 import { Button, PageHero } from "@/components/ui";
+import { getJourneyContext } from "@/lib/member-journey";
+import { KaiPrompt } from "@/components/kai-prompt";
 import { KaiAvatar } from "@/components/kai-avatar";
 
 export const metadata = {
@@ -43,17 +45,7 @@ export default async function BlueprintPage() {
     (assessment.answers as ArchitectAnswers) ?? {},
   );
   const blueprint = createBlueprint(results);
-  await supabase.from("architect_blueprints").upsert(
-    {
-      user_id: user.id,
-      assessment_id: assessment.id,
-      priorities: blueprint.priorities,
-      strengths: blueprint.strengths,
-      friction_points: blueprint.frictionPoints,
-      first_actions: blueprint.firstActions,
-    },
-    { onConflict: "user_id,assessment_id" },
-  );
+  const journey = await getJourneyContext(user.id);
   return (
     <>
       <PageHero
@@ -61,6 +53,7 @@ export default async function BlueprintPage() {
         title="A focused starting plan—built from your answers."
         copy={`Your assessment produced a ${results.score}/100 Version Score across seven areas of life. It reflects where you are now—not who you will always be.`}
       />
+      <section className="container journey-strip" aria-label="Your next step"><span>Blueprint → Priority → Cycle → Today’s action</span><strong>{blueprint.priorities[0]?.label}</strong><p>{blueprint.firstActions[0]?.action}</p><Button href={journey.cycle ? "/daily-focus" : "/architect-cycle"}>{journey.cycle ? "Continue today's work" : "Start my first Architect Cycle"}</Button></section>
       <div className="container blueprint-layout">
         <section className="blueprint-score">
           <p className="eyebrow">Full Version Score</p>
@@ -109,7 +102,8 @@ export default async function BlueprintPage() {
             ))}
           </ol>
           <div className="button-row">
-            <Button href="/dashboard">Open my dashboard</Button>
+            <Button href={journey.cycle ? "/daily-focus" : "/architect-cycle"}>{journey.cycle ? "Continue today's work" : "Start my first Architect Cycle"}</Button>
+            <KaiPrompt prompt="Explain my Blueprint and help me choose my first Architect Cycle.">Ask Kai about my Blueprint</KaiPrompt>
             <Button href="/architect-assessment" secondary>
               Review my responses
             </Button>

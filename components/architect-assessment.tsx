@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { architectQuestionCount, architectScoredQuestionCount, architectSections, calculateArchitectResults, type ArchitectAnswers } from "@/lib/architect-assessment";
 import { createClient } from "@/lib/supabase/client";
 import { trackAnalyticsEvent } from "@/lib/analytics-client";
+import { createBlueprint } from "@/lib/blueprint";
 
 type SaveState = "loading" | "saved" | "saving" | "error";
 
@@ -17,6 +18,7 @@ export function ArchitectAssessment() {
   const [saveState, setSaveState] = useState<SaveState>("loading");
   const [error, setError] = useState("");
   const hydrated = useRef(false);
+  const lastSaved = useRef("");
   const section = architectSections[sectionIndex];
 
   useEffect(() => {
@@ -41,6 +43,7 @@ export function ArchitectAssessment() {
           setAssessmentId(created.id);
           trackAnalyticsEvent("architect_assessment_start");
         }
+        lastSaved.current = JSON.stringify([data?.answers ?? {}, Math.min(Number(data?.current_section) || 0, architectSections.length - 1)]);
         hydrated.current = true;
         setSaveState("saved");
       } catch (loadError) {
@@ -54,6 +57,8 @@ export function ArchitectAssessment() {
 
   const persist = useCallback(async (nextAnswers: ArchitectAnswers, nextSection: number, complete = false) => {
     if (!assessmentId || !userId) return false;
+    const signature = JSON.stringify([nextAnswers, nextSection]);
+    if (!complete && signature === lastSaved.current) return true;
     setSaveState("saving");
     try {
       const result = calculateArchitectResults(nextAnswers);
@@ -65,6 +70,13 @@ export function ArchitectAssessment() {
       };
       const { error: updateError } = await createClient().from("architect_assessments").update(changes).eq("id", assessmentId).eq("user_id", userId);
       if (updateError) throw updateError;
+      if (complete) {
+        const blueprint = createBlueprint(result);
+        const { error: blueprintError } = await createClient().from("architect_blueprints").upsert({ user_id: userId, assessment_id: assessmentId, priorities: blueprint.priorities, strengths: blueprint.strengths, friction_points: blueprint.frictionPoints, first_actions: blueprint.firstActions }, { onConflict: "user_id,assessment_id" });
+        if (blueprintError) throw blueprintError;
+        window.dispatchEvent(new Event("bynv:journey-changed"));
+      }
+      lastSaved.current = signature;
       setSaveState("saved");
       setError("");
       return true;

@@ -6,10 +6,12 @@ import { trackAnalyticsEvent } from "@/lib/analytics-client";
 
 type CurrentMembership = { tier: MembershipTier; status: string; cancel_at_period_end: boolean; stripe_customer_id: string | null; stripe_subscription_id: string | null } | null;
 
-export function MembershipPlans({ signedIn, membership, foundationReady, billingReady, architectReady }: { signedIn: boolean; membership: CurrentMembership; foundationReady: boolean; billingReady: boolean; architectReady: boolean }) {
+export function MembershipPlans({ ownerQA = false, signedIn, membership, foundationReady, billingReady, architectReady }: { ownerQA?: boolean; signedIn: boolean; membership: CurrentMembership; foundationReady: boolean; billingReady: boolean; architectReady: boolean }) {
+  const [preview, setPreview] = useState(false);
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   async function checkout(tier: CheckoutTier) {
+    if (ownerQA) return;
     if (!signedIn) { window.location.href = "/sign-in?next=/membership"; return; }
     trackAnalyticsEvent("checkout_start", { tier });
     setPending(true); setMessage("Opening secure checkout…");
@@ -24,6 +26,8 @@ export function MembershipPlans({ signedIn, membership, foundationReady, billing
     if (result.url) window.location.href = result.url; else { setMessage(result.error ?? "Billing management is unavailable."); setPending(false); }
   }
   return <>
+    {ownerQA && <button className="button secondary" type="button" aria-pressed={preview} onClick={() => setPreview(!preview)}>{preview ? "Exit customer offer preview" : "Preview customer experience"}</button>}
+    {ownerQA && preview && <p className="field-help">Customer offer preview only. Checkout stays disabled and your owner entitlement does not change.</p>}
     <div className="membership-grid">
       {(Object.entries(membershipTiers) as [MembershipTier, (typeof membershipTiers)[MembershipTier]][]).map(([key, tier]) => <article className={`membership-plan membership-plan-${key} ${key === "builder" ? "featured" : ""}`} key={key}>
         <p className="eyebrow">{tier.label}</p>
@@ -31,7 +35,7 @@ export function MembershipPlans({ signedIn, membership, foundationReady, billing
         {tier.pricing.length > 0 && <ol className="membership-sequence">{tier.pricing.map((step) => <li key={step}>{step}</li>)}</ol>}
         <ul className="tick-list compact">{tier.benefits.map((benefit) => <li key={benefit}>{benefit}</li>)}</ul>
         <p className="membership-availability">{(key === "foundation" && foundationReady) || (key === "builder" && billingReady) || (key === "architect" && architectReady) ? "Secure Stripe checkout is available." : tier.availability}</p>
-        {membership?.tier === key && (membership.status === "active" || membership.status === "trialing") ? <button className="button secondary" type="button" disabled>Current membership</button> : key === "foundation" ? signedIn ? <button className="button secondary" type="button" disabled={pending || !foundationReady || Boolean(membership?.stripe_subscription_id)} onClick={() => void checkout("foundation")}>{foundationReady ? "Start my first 30 days" : "Billing activation pending"}</button> : <a className="button secondary" href="/create-account">Create account to begin</a> : key === "builder" ? <button className="button" type="button" disabled={pending || !billingReady} onClick={() => void checkout("builder")}>{billingReady ? "Choose Builder" : "Billing activation pending"}</button> : key === "architect" ? <button className="button" type="button" disabled={pending || !architectReady} onClick={() => void checkout("architect")}>{architectReady ? "Choose Architect" : "Billing activation pending"}</button> : <button className="button secondary" type="button" disabled>{key === "architect_coaching" ? "Coaching enrollment not open" : "Available after graduation"}</button>}
+        {ownerQA ? <button className="button secondary" type="button" disabled>{key === "architect_coaching" ? "Owner QA access · public enrollment closed" : preview ? "Preview only · no purchase" : "Included in owner QA access"}</button> : membership?.tier === key && (membership.status === "active" || membership.status === "trialing") ? <button className="button secondary" type="button" disabled>Current membership</button> : key === "foundation" ? signedIn ? <button className="button secondary" type="button" disabled={pending || !foundationReady || Boolean(membership?.stripe_subscription_id)} onClick={() => void checkout("foundation")}>{foundationReady ? "Start my first 30 days" : "Billing activation pending"}</button> : <a className="button secondary" href="/create-account">Create account to begin</a> : key === "builder" ? <button className="button" type="button" disabled={pending || !billingReady} onClick={() => void checkout("builder")}>{billingReady ? "Choose Builder" : "Billing activation pending"}</button> : key === "architect" ? <button className="button" type="button" disabled={pending || !architectReady} onClick={() => void checkout("architect")}>{architectReady ? "Choose Architect" : "Billing activation pending"}</button> : <button className="button secondary" type="button" disabled>{key === "architect_coaching" ? "Coaching enrollment not open" : "Available after graduation"}</button>}
       </article>)}
     </div>
     {signedIn && membership?.stripe_customer_id && <button className="button secondary billing-manage" type="button" disabled={pending} onClick={() => void portal()}>Manage payment method or cancellation</button>}

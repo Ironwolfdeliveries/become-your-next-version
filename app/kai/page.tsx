@@ -1,3 +1,5 @@
+import { KaiPrompt } from "@/components/kai-prompt";
+import { KaiPersonalContext } from "@/components/kai-personal-context";
 import { KaiDemo } from "@/components/kai-demo";
 import Image from "next/image";
 import { PageHero } from "@/components/ui";
@@ -26,7 +28,7 @@ export default function Kai() {
           />
         </div>
         <div>
-          <p className="eyebrow">KAI</p>
+          <p className="kai-wordmark">KAI</p>
           <h2 id="kai-meaning">Keep Advancing Intentionally.</h2>
           <p>
             Progress is not about changing everything at once. It is about
@@ -36,6 +38,7 @@ export default function Kai() {
         </div>
       </section>
 
+      <KaiPersonalContext />
       <section className="kai-value container" aria-labelledby="kai-roles">
         <header className="section-title">
           <p className="eyebrow">One guide. Three roles.</p>
@@ -69,6 +72,17 @@ export default function Kai() {
         </div>
       </section>
 
+      <section className="container kai-capabilities">
+        <p className="eyebrow">What Kai can help you do</p><h2>Bring a real question. Find a practical next step.</h2>
+        <div className="cards">{[
+          ["Understand your direction", "Explore your Version Score, explain your Blueprint, and connect today’s task to what you want to build."],
+          ["Make progress manageable", "Break down a large goal, plan a routine or Architect Cycle, review progress, and spot recurring friction."],
+          ["Prepare for what is next", "Organize career goals, prepare for a job search, and build useful AI prompts and productivity systems."],
+          ["Ask better questions", "Prepare questions about meal planning, fitness, or financial organization for a qualified professional. Kai does not replace one."],
+        ].map(([title,copy]) => <article className="card" key={title}><h3>{title}</h3><p>{copy}</p></article>)}</div>
+        <h2>Try asking Kai</h2><div className="kai-prompt-grid">{["Explain my Version Score", "Help me turn a large goal into three smaller steps", "Help me plan a 14-day Architect Cycle", "Help me prepare for a job search", "Build an AI prompt for my next action", "Review my progress and help me identify friction"].map(prompt => <KaiPrompt key={prompt} prompt={prompt}>{prompt}</KaiPrompt>)}</div>
+        <p className="field-help">Examples open Ask Kai with a draft question. You choose what to send. Guided Kai may offer a structured prompt to explore further.</p>
+      </section>
       <section className="kai-context-section">
         <div className="container kai-context-grid">
           <div>

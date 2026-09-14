@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useMemberJourney } from "./member-journey";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/client";
 
 export function AccountControls({ onNavigate }: { onNavigate?: () => void }) {
-  const [signedIn, setSignedIn] = useState(false);
+  const { signedIn } = useMemberJourney();
   const [moderator, setModerator] = useState(false);
   const [admin, setAdmin] = useState(false);
   const pathname = usePathname();
@@ -17,20 +18,18 @@ export function AccountControls({ onNavigate }: { onNavigate?: () => void }) {
     if (!hasSupabaseConfig) return;
     const supabase = createClient();
     void supabase.auth.getUser().then(async ({ data }) => {
-      setSignedIn(Boolean(data.user));
+      setModerator(false); setAdmin(false);
       if (data.user) {
         const [{ data: entitlement }, accessResponse] = await Promise.all([supabase.from("community_entitlements").select("community_role").eq("user_id", data.user.id).maybeSingle(), fetch("/api/account/access")]);
         setModerator(entitlement?.community_role === "moderator" || entitlement?.community_role === "admin");
         if (accessResponse.ok) setAdmin(Boolean((await accessResponse.json() as { admin?: boolean }).admin));
       }
     });
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => setSignedIn(Boolean(session?.user)));
-    return () => data.subscription.unsubscribe();
-  }, []);
+  }, [signedIn]);
 
   async function logout() {
     await createClient().auth.signOut();
-    setSignedIn(false);
+    window.dispatchEvent(new Event("bynv:journey-changed"));
     onNavigate?.();
     router.replace("/");
     router.refresh();
