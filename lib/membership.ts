@@ -62,6 +62,12 @@ export function isBillingLaunchEnabled() {
   return process.env.BILLING_LIVE_ENABLED === "true";
 }
 
+// Stripe capability is not permission to reopen public conversion.
+// Set this only after Daniel explicitly authorizes reopening.
+export function isPublicPaidEnrollmentAuthorized() {
+  return process.env.PUBLIC_PAID_ENROLLMENT_AUTHORIZED === "true";
+}
+
 export function isStripeTaxLaunchEnabled() {
   return process.env.STRIPE_TAX_ENABLED === "true";
 }
@@ -77,6 +83,7 @@ export function hasBillingConfig(tier: CheckoutTier = "builder") {
     ? stripePriceForTier(tier) && process.env.STRIPE_FOUNDATION_PRICE_ID
     : stripePriceForTier(tier);
   return Boolean(
+    isPublicPaidEnrollmentAuthorized() &&
     isBillingLaunchEnabled() &&
     isStripeTaxLaunchEnabled() &&
     process.env.STRIPE_SECRET_KEY &&

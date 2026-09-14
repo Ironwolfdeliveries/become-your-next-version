@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
-import { FOUNDATION_FREE_DAYS, hasBillingConfig, stripePriceForTier, type MembershipTier } from "@/lib/membership";
+import { FOUNDATION_FREE_DAYS, hasBillingConfig, isPublicPaidEnrollmentAuthorized, stripePriceForTier, type MembershipTier } from "@/lib/membership";
 import { SITE_URL } from "@/lib/site";
 import { getAccountAccess, isPlatformAdmin } from "@/lib/admin";
 
@@ -16,6 +16,7 @@ function assertSupabaseSucceeded(operation: string, error: SupabaseOperationErro
 }
 
 export async function POST(request: Request) {
+  if (!isPublicPaidEnrollmentAuthorized()) return NextResponse.json({ error: "Paid enrollment is currently paused. Existing members can still manage their billing." }, { status: 503 });
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
