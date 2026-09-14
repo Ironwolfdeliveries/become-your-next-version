@@ -1,4 +1,4 @@
-import { Button, PageHero } from "@/components/ui";
+import { CTA, PageHero } from "@/components/ui";
 import { resources } from "@/lib/data";
 
 export const metadata = {
@@ -20,9 +20,6 @@ export default function ResourcesPage() {
         </div>
       </article>)}
     </section>
-    <section className="container resource-next panel">
-      <div><p className="eyebrow">Start with where you are</p><h2>Make the next resource personal.</h2><p>The free Version Snapshot identifies one current strength and one area to focus on, then gives you practical next steps based on your six answers.</p></div>
-      <Button href="/assessment">Take your Version Snapshot</Button>
-    </section>
+    <CTA title="Make the next resource personal." />
   </>;
 }
