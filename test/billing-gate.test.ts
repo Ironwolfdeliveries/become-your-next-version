@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { FOUNDATION_FREE_DAYS, FOUNDATION_INTRO_DAYS, hasBillingConfig } from "../lib/membership.ts";
 
 const billingEnvironmentNames = [
+  "PUBLIC_PAID_ENROLLMENT_AUTHORIZED",
   "BILLING_LIVE_ENABLED",
   "STRIPE_TAX_ENABLED",
   "STRIPE_SECRET_KEY",
@@ -20,6 +21,7 @@ const originalEnvironment = Object.fromEntries(
 
 function configureBillingEnvironment() {
   Object.assign(process.env, {
+    PUBLIC_PAID_ENROLLMENT_AUTHORIZED: "true",
     BILLING_LIVE_ENABLED: "true",
     STRIPE_TAX_ENABLED: "true",
     STRIPE_SECRET_KEY: "configured",
@@ -45,6 +47,12 @@ try {
   assert.equal(hasBillingConfig("foundation"), true);
   assert.equal(hasBillingConfig("builder"), true);
   assert.equal(hasBillingConfig("architect"), true);
+
+  delete process.env.PUBLIC_PAID_ENROLLMENT_AUTHORIZED;
+  assert.equal(hasBillingConfig("foundation"), false, "Stripe readiness must not reopen public enrollment without owner authorization");
+  assert.equal(hasBillingConfig("builder"), false);
+  assert.equal(hasBillingConfig("architect"), false);
+  configureBillingEnvironment();
 
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
   assert.equal(

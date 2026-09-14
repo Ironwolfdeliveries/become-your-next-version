@@ -17,7 +17,7 @@ export default async function Membership({ searchParams }: { searchParams: Promi
   const ownerQA = isPlatformAdmin(access) && overrideActive;
   const query = await searchParams;
   const foundationReady = hasBillingConfig("foundation"); const builderReady = hasBillingConfig("builder"); const architectReady = hasBillingConfig("architect");
-  return <><PageHero eyebrow="The Architects" title="Choose the membership that fits your goals." copy={user ? "Review your current access and the available BYNV offers." : foundationReady && builderReady && architectReady ? "Begin with 30 days free, continue with Foundation, or choose the level of support that fits where you are going." : "Create your BYNV account now. Paid membership will open after checkout setup is complete."} />
+  return <><PageHero eyebrow="The Architects" title="Choose the membership that fits your goals." copy={user ? "Review your current access and the available BYNV offers." : foundationReady && builderReady && architectReady ? "Begin with 30 days free, continue with Foundation, or choose the level of support that fits where you are going." : "Paid enrollment is currently paused. Your existing account and saved work remain available."} />
     <section className="container membership-shell">
       {query.billing === "success" && <p className="save-status">Checkout completed. Membership access updates after secure payment confirmation.</p>}
       {query.billing === "canceled" && <p className="save-status">Checkout was canceled. No membership change was made.</p>}

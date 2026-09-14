@@ -2,7 +2,8 @@
 
 ## Boundaries
 
-- Existing production baseline: ef2e353. No public conversion flag or Stripe price changed.
+- Existing production baseline: ef2e353. No Stripe price changed.
+- Post-deploy live inspection caught checkout advertised as available despite the requested hold. Added a separate fail-closed PUBLIC_PAID_ENROLLMENT_AUTHORIZED gate for new Checkout only; leave unset/false until Daniel explicitly authorizes reopening. Existing subscriptions, portal and webhooks are unaffected.
 - No bank, entity, NJ registration, real charge, subscription, or paid AI call created.
 - Existing owner receives internal active Architect Coaching via the existing audited admin RPC; owner role retained and Kai Live beta remains off.
 - Owner assessment checksum matched before/after the access update. No assessment answers, reflections or scores were edited.
