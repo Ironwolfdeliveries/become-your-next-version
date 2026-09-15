@@ -18,7 +18,7 @@ export default function Privacy() {
           When you create an account, BYNV processes your email address,
           encrypted authentication credentials, and any name you choose to
           provide. BYNV can store your Version Snapshot, Architect Assessment
-          responses, scores, Blueprint data, Daily Focus entries, goals, journal
+          responses, scores, Blueprint data, Today’s Plan entries, goals, journal
           reflections, challenges, Architect Cycle reviews, membership status,
           community profile and activity, reports, and private Kai
           conversations.
@@ -48,7 +48,7 @@ export default function Privacy() {
         <h2>Kai and private context</h2>
         <p>
           Kai can use the current page and permitted account context such as
-          your scores, Blueprint priorities, Daily Focus, goals, cycles and
+          your scores, Blueprint priorities, Today’s Plan, goals, cycles and
           challenges. Journal entries are excluded from both Guided and Live
           modes. Kai conversations remain private to the member account. The
           operational ledger records mode, model, status, token usage, and an

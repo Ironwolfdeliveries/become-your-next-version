@@ -1,19 +1,25 @@
 import type { getKaiPageContext } from "./kai-context";
 
+export type KaiDailyContext = {
+  id?: string; focus_date?: string; priority?: string | null; action?: string | null; completed?: boolean | null;
+  steps?: Array<{ id: string; text: string; done: boolean }> | null;
+  check_in?: "done" | "progress" | "missed" | null;
+  recovery?: { strategy?: string; next_date: string; next_action: string } | null;
+  cycle_id?: string | null;
+};
 export type KaiMemberContext = {
+  member?: { today: string; timezone: string; name?: string; orientationComplete?: boolean };
   versionSnapshot: null | {
-    score?: number | null;
-    focus?: string | null;
-    strongest_areas?: unknown;
-    opportunity_areas?: unknown;
+    score?: number | null; focus?: string | null; strongest_areas?: unknown; opportunity_areas?: unknown;
   };
   architectAssessment: null | { status?: string | null; version_score?: number | null; section_results?: unknown };
   blueprint: null | { priorities?: unknown; strengths?: unknown; first_actions?: unknown; status?: string | null };
-  goals: Array<{ title?: string | null; pillar_key?: string | null; status?: string | null; target_date?: string | null }>;
-  dailyFocus: null | { priority?: string | null; action?: string | null; completed?: boolean | null };
-  architectCycles: Array<{ focus?: string | null; outcome?: string | null; status?: string | null; starts_on?: string | null; ends_on?: string | null }>;
+  goals: Array<{ title?: string | null; pillar_key?: string | null; status?: string | null; target_date?: string | null; success_vision?: string | null; commitment_rule?: string | null }>;
+  dailyFocus: KaiDailyContext | null;
+  unresolvedActions?: KaiDailyContext[];
+  architectCycles: Array<{ id?: string; focus?: string | null; outcome?: string | null; status?: string | null; starts_on?: string | null; ends_on?: string | null; success_vision?: string | null; plan_steps?: string[] | null; remaining_steps?: string[]; commitment_rule?: string | null; day?: number; total_days?: number; review_due?: boolean }>;
   challenges: Array<{ challenge_key?: string | null; status?: string | null; progress?: unknown; started_at?: string | null }>;
-  progress: { completedDailyFocusCount: number; completedGoalCount: number; completedCycleCount: number; snapshotCount: number };
+  progress: { completedDailyFocusCount: number; completedGoalCount: number; completedCycleCount: number; snapshotCount: number; completedActionCount?: number; buildStreak?: number; actionsThisWeek?: number };
 };
 
 export type GuidedKaiResult = {
@@ -168,7 +174,7 @@ function recordLabels(value: unknown) {
     if (typeof item === "string") return [item];
     if (!item || typeof item !== "object") return [];
     const record = item as Record<string, unknown>;
-    const label = record.label ?? record.title ?? record.key ?? record.name;
+    const label = record.label ?? record.title ?? record.action ?? record.key ?? record.name;
     return typeof label === "string" && label.trim() ? [label.trim()] : [];
   });
 }
@@ -196,34 +202,71 @@ function explainPage(page: PageContext): GuidedKaiResult {
   };
 }
 
-function nextStep(context: KaiMemberContext, page: PageContext): GuidedKaiResult {
+function savedSteps(entry: KaiDailyContext | null | undefined) {
+  if (entry?.steps?.length) return entry.steps;
+  return entry?.action ? [{ id: "legacy", text: entry.action, done: Boolean(entry.completed) }] : [];
+}
+
+function commitmentText(rule: string | null | undefined) {
+  const labels: Record<string, string> = {
+    recommit: "recommit within 24 hours", blocker: "tell Kai what blocked you", shrink: "make the next action smaller",
+    reset: "take a 10-minute reset", partner: "check in with your accountability partner",
+  };
+  return rule && labels[rule] ? ` Your chosen commitment rule is to ${labels[rule]}.` : "";
+}
+
+function recoveryStep(context: KaiMemberContext): GuidedKaiResult | null {
+  const today = context.dailyFocus;
+  const incompleteToday = today && !today.recovery && (today.check_in === "missed" || today.check_in === "progress") && savedSteps(today).some(step => !step.done) ? today : null;
+  const earlier = [...(context.unresolvedActions || [])].filter(entry => !entry.recovery && savedSteps(entry).some(step => !step.done))
+    .sort((a, b) => (a.focus_date || "").localeCompare(b.focus_date || ""))[0];
+  const entry = incompleteToday || earlier;
+  if (!entry) return null;
+  const step = savedSteps(entry).find(item => !item.done);
+  const cycle = context.architectCycles.find(item => item.id && item.id === entry.cycle_id);
+  const when = entry === incompleteToday ? "Today’s" : `Your ${entry.focus_date || "earlier"}`;
+  return { answer: `${when} plan still has an unfinished step: “${step?.text}”${commitmentText(cycle?.commitment_rule)} We can keep it, make it smaller, reschedule it, or choose another approach. Pick one next move for the unfinished plan; your original steps stay in your history. What would make the next attempt more doable?`, nextAction: { href: "/daily-focus", label: "Adjust my next step" } };
+}
+
+function nextStep(context: KaiMemberContext): GuidedKaiResult {
   if (!context.architectAssessment || context.architectAssessment.status !== "completed") {
     return { answer: "Your most useful next step is to complete—or continue—the Architect Assessment. Your answers will shape your Blueprint, and they save as you go.", nextAction: { href: "/architect-assessment", label: "Continue Architect Assessment" } };
   }
   if (!context.blueprint) {
     return { answer: "Your Architect Assessment is complete, so the next step is to open your Blueprint. BYNV will turn your answers into clear priorities and first actions.", nextAction: { href: "/blueprint", label: "Generate my Blueprint" } };
   }
-  if (context.dailyFocus?.action && !context.dailyFocus.completed) {
-    return { answer: `Stay with today’s saved action: “${context.dailyFocus.action}” Complete the smallest useful version before adding another priority.`, nextAction: { href: "/daily-focus", label: "Open today’s focus" } };
+  const recovery = recoveryStep(context);
+  if (recovery) return recovery;
+  const cycle = active(context.architectCycles);
+  if (cycle?.review_due) {
+    return { answer: `Your Architect Cycle “${cycle.focus}” is ready to review.${cycle.success_vision ? ` You wanted to see: “${cycle.success_vision}”.` : ""} Compare where you started with what actually changed, then choose what to carry into your next 14 days. A brief review is enough.`, nextAction: { href: "/architect-cycle", label: "Review my Cycle and choose what’s next" } };
   }
-  const blueprintAction = firstText(context.blueprint.first_actions);
-  if (blueprintAction && !context.dailyFocus?.action) {
-    return { answer: `Turn this Blueprint action into today’s focus: “${blueprintAction}” Make it specific enough to complete or visibly advance today.`, nextAction: { href: "/daily-focus", label: "Set today’s focus" } };
+  const todaySteps = savedSteps(context.dailyFocus);
+  const openStep = todaySteps.find(step => !step.done);
+  if (context.dailyFocus?.recovery) {
+    return { answer: `You’ve already given this plan a next move: “${context.dailyFocus.recovery.next_action}”, saved for ${context.dailyFocus.recovery.next_date}. Your original steps remain in your history. You can continue with that plan when the day comes.`, nextAction: { href: "/daily-focus", label: "View my saved next step" } };
+  }
+  if (openStep && !context.dailyFocus?.completed && context.dailyFocus?.check_in !== "done") {
+    return { answer: `Stay with today’s saved action: “${openStep.text}” Complete the smallest useful version before adding another priority. Check it off in Today’s Plan when it’s done; your progress will be saved.`, nextAction: { href: "/daily-focus", label: "Open Today’s Plan" } };
+  }
+  if (context.dailyFocus?.completed || context.dailyFocus?.check_in === "done" || (todaySteps.length && !openStep)) {
+    const count = context.progress.actionsThisWeek;
+    return { answer: `Today’s plan is complete.${typeof count === "number" ? ` That’s ${count} completed ${count === 1 ? "action" : "actions"} in the last seven days.` : ""} You can call today done. A note is optional. When you return, we’ll continue from your saved Cycle and progress.`, nextAction: { href: "/progress", label: "See my progress" } };
+  }
+  if (cycle?.focus) {
+    const action = (cycle.remaining_steps ?? cycle.plan_steps)?.find(step => step.trim());
+    return { answer: `Your current Architect Cycle is “${cycle.focus}”.${cycle.day && cycle.total_days ? ` You’re on Day ${cycle.day} of ${cycle.total_days}.` : ""}${action ? ` Start with “${action}”.` : ` Choose one small action that directly supports that focus.`}${cycle.success_vision ? ` You’re working toward: “${cycle.success_vision}”.` : ""} Today’s Plan will help you keep it to one to three realistic steps.`, nextAction: { href: "/daily-focus", label: "Build Today’s Plan from my Cycle" } };
+  }
+  if (context.member?.orientationComplete === false) {
+    return { answer: "Your Blueprint is ready. Take the short BYNV walkthrough, then choose what you want to improve. I’ll help you turn that choice into a realistic first 14-day Cycle.", nextAction: { href: "/orientation", label: "See how BYNV works" } };
   }
   const goal = active(context.goals);
   if (goal?.title) {
-    return { answer: `Your active goal “${goal.title}” is the clearest anchor. Choose one concrete action that advances it today, then record that action in Daily Focus.`, nextAction: { href: "/daily-focus", label: "Choose today’s action" }, aiHandoff: buildPrompt("turn an active goal into a practical action plan", context, goal.title) };
-  }
-  const cycle = active(context.architectCycles);
-  if (cycle?.focus) {
-    return { answer: `Your active Architect Cycle is focused on “${cycle.focus}.” Review its intended outcome, choose today’s smallest supporting action, and use the cycle review to keep or adjust the approach.`, nextAction: { href: "/architect-cycle", label: "Review my Architect Cycle" } };
-  }
-  const challenge = active(context.challenges);
-  if (challenge?.challenge_key) {
-    return { answer: `Continue your active challenge, “${challenge.challenge_key}.” Open it, confirm the next required practice, and record only progress you actually complete.`, nextAction: { href: "/challenges", label: "Open my challenge" } };
+    return { answer: `Your active goal “${goal.title}” is a useful anchor.${goal.success_vision ? ` Success would look like: “${goal.success_vision}”.` : ""} Let’s build a short Cycle around it, then choose one concrete step for today.`, nextAction: { href: "/architect-cycle", label: "Build my 14-day Cycle" }, aiHandoff: buildPrompt("turn an active goal into a practical action plan", context, goal.title) };
   }
   const priority = firstText(context.blueprint.priorities);
-  return { answer: priority ? `Your Blueprint priority “${priority}” is the best place to resume. Choose one small action that can create visible evidence of progress this week.` : `Use this page for its immediate purpose, then ${page.recommendation.label.toLowerCase()}.`, nextAction: priority ? { href: "/goals", label: "Build a goal from this priority" } : page.recommendation };
+  const blueprintAction = firstText(context.blueprint.first_actions);
+  return { answer: priority ? `Your Blueprint suggests “${priority}” as a starting point.${blueprintAction ? ` One useful first move is “${blueprintAction}”.` : ""} You can begin there or choose something more important to you. Let’s turn that choice into a short Cycle.` : `Choose what you want to improve, then build a realistic 14-day plan with Kai.`, nextAction: { href: "/architect-cycle", label: "Choose my first Cycle" } };
 }
 
 function versionScore(context: KaiMemberContext): GuidedKaiResult {
@@ -248,23 +291,19 @@ function goalHelp(context: KaiMemberContext): GuidedKaiResult {
   const priority = firstText(context.blueprint?.priorities);
   if (!goal?.title) {
     const anchor = priority ? ` Your Blueprint suggests starting with “${priority}.”` : "";
-    return { answer: `You do not have an active saved goal yet.${anchor} Define an outcome you can recognize, connect it to one BYNV domain, and choose the first action small enough to begin this week.`, nextAction: { href: "/goals", label: "Create an Architect Goal" }, aiHandoff: buildPrompt("clarify a meaningful goal and turn it into milestones", context, priority) };
+    return { answer: `You do not have an active saved goal yet.${anchor} Define an outcome you can recognize, choose the part of your life it affects, and choose the first action small enough to begin this week.`, nextAction: { href: "/goals", label: "Create an Architect Goal" }, aiHandoff: buildPrompt("clarify a meaningful goal and turn it into milestones", context, priority) };
   }
   return { answer: `Start with your active goal: “${goal.title}.” Check that it names an observable outcome, then choose one milestone and one action you can complete next. Keep the goal yours; use AI only to organize possibilities, surface obstacles, or draft a plan for your review.`, nextAction: { href: "/goals", label: "Review my goal" }, aiHandoff: buildPrompt("turn my goal into milestones, obstacles, and next actions", context, goal.title) };
 }
 
 function dailyGuidance(context: KaiMemberContext): GuidedKaiResult {
-  if (context.dailyFocus?.action) {
-    const state = context.dailyFocus.completed ? "is marked complete" : "is still open";
-    return { answer: `Today’s action ${state}: “${context.dailyFocus.action}” ${context.dailyFocus.completed ? "Record what worked and what you will adjust before choosing tomorrow’s focus." : "Protect enough time to complete the smallest useful version of it."}`, nextAction: { href: "/daily-focus", label: "Open Daily Focus" } };
-  }
-  return nextStep(context, { title: "Daily Focus", purpose: "your place for one priority and one deliberate action.", recommendation: { href: "/daily-focus", label: "Set today’s focus" } });
+  return nextStep(context);
 }
 
 function progress(context: KaiMemberContext): GuidedKaiResult {
   const facts = [
     `${context.progress.snapshotCount} saved Snapshot${context.progress.snapshotCount === 1 ? "" : "s"}`,
-    `${context.progress.completedDailyFocusCount} completed Daily Focus action${context.progress.completedDailyFocusCount === 1 ? "" : "s"}`,
+    `${context.progress.completedActionCount ?? context.progress.completedDailyFocusCount} completed action${(context.progress.completedActionCount ?? context.progress.completedDailyFocusCount) === 1 ? "" : "s"}`,
     `${context.progress.completedGoalCount} completed goal${context.progress.completedGoalCount === 1 ? "" : "s"}`,
     `${context.progress.completedCycleCount} completed Architect Cycle${context.progress.completedCycleCount === 1 ? "" : "s"}`,
   ];
@@ -274,12 +313,17 @@ function progress(context: KaiMemberContext): GuidedKaiResult {
 
 function buildPrompt(task: string, context: KaiMemberContext, focus = ""): GuidedKaiResult["aiHandoff"] {
   const allowed: string[] = [];
+  const cycle = active(context.architectCycles);
+  const goal = active(context.goals);
   if (focus) allowed.push(`Current focus: ${focus}`);
   else if (context.dailyFocus?.priority) allowed.push(`Current priority: ${context.dailyFocus.priority}`);
-  const goal = active(context.goals);
-  if (goal?.title && goal.title !== focus) allowed.push(`Active goal: ${goal.title}`);
+  else if (cycle?.focus) allowed.push(`Current Cycle: ${cycle.focus}`);
+  const taskWords = new Set(task.toLowerCase().match(/\b[a-z]{4,}\b/g) || []);
+  const namesGoal = goal?.title?.toLowerCase().split(/\W+/).some(word => taskWords.has(word));
+  if (goal?.title && goal.title !== focus && (!cycle || namesGoal)) allowed.push(`Active goal: ${goal.title}`);
+  if (cycle?.focus && cycle.focus !== focus && !allowed.some(item => item.startsWith("Current Cycle:"))) allowed.push(`Current Cycle: ${cycle.focus}`);
   const blueprintPriority = firstText(context.blueprint?.priorities);
-  if (blueprintPriority && blueprintPriority !== focus) allowed.push(`Blueprint priority: ${blueprintPriority}`);
+  if (!cycle && !goal && !focus && blueprintPriority) allowed.push(`Blueprint starting point: ${blueprintPriority}`);
   const contextBlock = allowed.length ? allowed.slice(0, 3).join("\n") : "Relevant context: [Add only what this task requires.]";
   return {
     prompt: `Act as a practical thinking partner. Help me ${task}.\n\n${contextBlock}\n\nBefore answering, ask up to three short questions only if essential information is missing. Then provide:\n1. A clear outcome or decision to aim for.\n2. The smallest useful next steps in order.\n3. Likely obstacles and simple responses.\n4. What I should verify or decide myself.\n\nDo not make purchases, send messages, publish anything, or make high-stakes decisions for me. State assumptions clearly and distinguish facts from suggestions.`,
@@ -289,17 +333,22 @@ function buildPrompt(task: string, context: KaiMemberContext, focus = ""): Guide
 
 function aiPrompt(message: string, context: KaiMemberContext): GuidedKaiResult {
   const task = message.replace(/use ai for this|build (?:me )?(?:an )?ai prompt|create (?:me )?(?:an )?ai prompt|ai handoff/gi, "").trim() || "turn my current priority into a clear action plan";
-  return { answer: "I built a portable prompt using only the BYNV context needed for this task. Review it before copying, customize anything in brackets, and keep sensitive information out.", nextAction: { href: "/daily-focus", label: "Open AI Leverage" }, aiHandoff: buildPrompt(task, context) };
+  return { answer: "I built a portable prompt using only the BYNV context needed for this task. Review it before copying, customize anything in brackets, and keep sensitive information out.", nextAction: { href: "/daily-focus", label: "Open Today’s Plan and AI help" }, aiHandoff: buildPrompt(task, context) };
 }
 
 export function buildGuidedKaiResponse(args: { message: string; intent?: string; page: PageContext; context?: KaiMemberContext | null; assessmentMode: boolean }): GuidedKaiResult {
   const context = args.context ?? EMPTY_CONTEXT;
   const text = `${args.intent ?? ""} ${args.message}`.toLowerCase();
+  const urgent = buildKaiSafetyResponse(args.message);
+  if (urgent) return urgent;
   if (args.assessmentMode) return assessmentSafeguard(args.page);
+  if (args.context === null && /next|today|daily|goal|progress|my (?:version )?score|my blueprint|missed|commitment/.test(text)) {
+    return { answer: "I don’t have your saved journey available right now. Open your dashboard to sign in or retry loading it. I can still explain how this page works, but I won’t guess what you’ve completed.", nextAction: { href: "/dashboard", label: "Open my dashboard" } };
+  }
   if (/explain this|this page|what is this section/.test(text)) return explainPage(args.page);
   if (/version score|my score|strongest|opportunity area/.test(text)) return versionScore(context);
-  if (/what should i do next|next action|next step/.test(text)) return nextStep(context, args.page);
-  if (/daily guidance|today|daily focus/.test(text)) return dailyGuidance(context);
+  if (/what should i do next|next action|next step/.test(text)) return nextStep(context);
+  if (/daily guidance|today|daily focus|made progress|got it done|missed|didn[’']?t happen|make it smaller|reschedule|recommit|got in the way|commitment rule/.test(text)) return dailyGuidance(context);
   if (/progress|history|how am i doing/.test(text)) return progress(context);
   if (/goal/.test(text) && !/page/.test(text)) return goalHelp(context);
   if (/use ai|ai prompt|copy prompt|handoff|brainstorm|research|draft|learn a skill|break .* into steps|analy[sz]e options|routine/.test(text)) return aiPrompt(args.message, context);

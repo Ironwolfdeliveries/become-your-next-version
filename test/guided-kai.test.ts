@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildGuidedKaiResponse,
   buildKaiSafetyResponse,
@@ -19,6 +20,7 @@ import {
 } from "../lib/kai-context.ts";
 import {
   getKaiRelevantContext,
+  getKaiMemberContext,
   KAI_SYSTEM_PROMPT,
 } from "../lib/kai-server.ts";
 import { isSupabaseAdminConfigured } from "../lib/supabase/config.ts";
@@ -295,7 +297,7 @@ const progress = buildGuidedKaiResponse({
   context,
   assessmentMode: false,
 });
-assert.match(progress.answer, /4 completed Daily Focus/);
+assert.match(progress.answer, /4 completed actions/);
 assert.match(progress.answer, /1 completed goal/);
 assert.match(progress.answer, /2 completed Architect Cycles/);
 
@@ -349,6 +351,137 @@ for (const route of [
   );
   assert.ok(routePage.recommendation.href.startsWith("/"));
 }
+
+// A chosen Cycle must outrank an unrelated assessment suggestion or older goal.
+const customCycle: KaiMemberContext = {
+  ...context, dailyFocus: null,
+  member: { today: "2026-09-15", timezone: "America/New_York", orientationComplete: true },
+  architectCycles: [{ id: "career-cycle", status: "active", focus: "Change careers", starts_on: "2026-09-14", ends_on: "2026-09-27",
+    success_vision: "Submit two thoughtful applications", plan_steps: ["Update one paragraph of my résumé"], remaining_steps: ["Update one paragraph of my résumé"], day: 2, total_days: 14, commitment_rule: "shrink" }],
+};
+const guided = (saved: KaiMemberContext | null, message = "What should I do next?") =>
+  buildGuidedKaiResponse({ message, page, context: saved, assessmentMode: false });
+const freshBlueprint = guided({ ...customCycle, architectCycles: [], goals: [] });
+assert.match(freshBlueprint.answer, /Take a ten-minute walk/, "Blueprint action objects must be interpreted as actions, not internal keys");
+const careerNext = guided(customCycle);
+assert.match(careerNext.answer, /Update one paragraph of my résumé/);
+assert.doesNotMatch(careerNext.answer, /ten-minute walk|morning routine/);
+assert.equal(careerNext.nextAction.href, "/daily-focus");
+
+const stepAware: KaiMemberContext = { ...customCycle, dailyFocus: {
+  action: "An old one-field action", completed: false,
+  steps: [{ id: "a", text: "Prepare the résumé", done: true }, { id: "b", text: "Send the first application", done: false }],
+} };
+assert.match(guided(stepAware).answer, /Send the first application/);
+assert.doesNotMatch(guided(stepAware).answer, /An old one-field action/);
+const missed: KaiMemberContext = { ...customCycle, unresolvedActions: [{ id: "missed", focus_date: "2026-06-01", cycle_id: "career-cycle",
+  steps: [{ id: "old", text: "Ask for the introduction", done: false }], check_in: "missed", recovery: null }] };
+const recoveryGuidance = guided(missed);
+assert.match(recoveryGuidance.answer, /2026-06-01/);
+assert.match(recoveryGuidance.answer, /make the next action smaller/);
+assert.match(recoveryGuidance.answer, /keep it, make it smaller, reschedule it, or choose another approach/);
+assert.equal(recoveryGuidance.nextAction.href, "/daily-focus");
+assert.match(guided({ ...missed, dailyFocus: { ...stepAware.dailyFocus, check_in: "progress" } }, "Made progress").answer, /unfinished step/);
+
+const recovered = guided({ ...customCycle, dailyFocus: { ...stepAware.dailyFocus, check_in: "missed",
+  recovery: { strategy: "shrink", next_date: "2026-09-16", next_action: "Find one useful contact" } } });
+assert.match(recovered.answer, /already given this plan a next move/);
+assert.match(recovered.answer, /2026-09-16/);
+assert.doesNotMatch(recovered.answer, /still has an unfinished/);
+const done = guided({ ...customCycle, dailyFocus: { completed: true, check_in: "done", steps: [{ id: "done", text: "Submit my application", done: true }] },
+  progress: { ...context.progress, completedActionCount: 9, actionsThisWeek: 3 } }, "Daily guidance");
+assert.match(done.answer, /call today done/);
+assert.match(done.answer, /note is optional/);
+assert.doesNotMatch(done.answer, /record what worked|write.*reflection/i);
+assert.match(guided({ ...customCycle, progress: { ...context.progress, completedActionCount: 9 } }, "Review my progress").answer, /9 completed actions/);
+const dueCycle = guided({ ...customCycle, architectCycles: [{ ...customCycle.architectCycles[0], review_due: true }] });
+assert.equal(dueCycle.nextAction.href, "/architect-cycle");
+assert.match(dueCycle.answer, /Submit two thoughtful applications/);
+const orientation = guided({ ...customCycle, architectCycles: [], member: { ...customCycle.member!, orientationComplete: false } });
+assert.equal(orientation.nextAction.href, "/orientation");
+assert.match(guided(null).answer, /don’t have your saved journey available/);
+assert.doesNotMatch(guided(null, "Review my progress").answer, /0 completed/);
+assert.match(guided(missed, "I am planning to hurt myself").answer, /988/);
+
+// Extra private fields must never hitchhike into the Live model context.
+const privateContext = { ...missed,
+  dailyFocus: { ...stepAware.dailyFocus, reflection: "PRIVATE_DAILY_NOTE", recovery: { strategy: "shrink", next_date: "2026-09-16", next_action: "Find a contact", blocker: "PRIVATE_BLOCKER" } },
+  architectCycles: [{ ...customCycle.architectCycles[0], outcome: "PRIVATE_CYCLE_REVIEW" }],
+  journal: "PRIVATE_JOURNAL",
+};
+const relevantPrivate = JSON.stringify(getKaiRelevantContext(privateContext, "/daily-focus", "Help with my next action"));
+assert.doesNotMatch(relevantPrivate, /PRIVATE_/);
+assert.match(relevantPrivate, /Find a contact/);
+assert.match(relevantPrivate, /commitment_rule/);
+const manyUnresolved = { ...missed, unresolvedActions: Array.from({ length: 8 }, (_, index) => ({ ...missed.unresolvedActions![0], id: String(index) })) };
+const limitedContext = getKaiRelevantContext(manyUnresolved, "/daily-focus", "I missed a commitment");
+assert.equal((limitedContext.unresolvedActions as unknown[]).length, 3);
+assert.equal(limitedContext.unresolvedPlanCount, 8);
+assert.deepEqual(getKaiRelevantContext(privateContext, "/daily-focus", "What is the weather in Tokyo?"), {});
+assert.equal(getKaiPageContext("/daily-focus").title, "Today’s Plan");
+assert.equal(getKaiPageContext("/resources").title, "Architect Library");
+assert.notEqual(getKaiPageContext("/orientation").title, "BYNV");
+
+// Exercise the DB reader at a real UTC/local-day boundary, with a newer draft,
+// a later completed assessment, two actions in one day, and a paged older miss.
+type FakeRow = Record<string, unknown>;
+type FakeResult = { data: FakeRow | FakeRow[] | null; count: number | null; error: { message: string } | null };
+const queries: Array<{ table: string; columns: string; filters: Array<[string, string, unknown]> }> = [];
+const fixtures: Record<string, FakeRow[]> = {
+  profiles: [{ id: "member", display_name: "Daniel Calderon", timezone: "America/New_York", onboarding_completed: true }],
+  version_snapshots: [{ id: "s", user_id: "member", score: 63, completed_at: "2026-09-01" }],
+  architect_assessments: [
+    { user_id: "member", version: 1, status: "completed", version_score: 42, completed_at: "2026-01-01" },
+    { user_id: "member", version: 2, status: "completed", version_score: 59, completed_at: "2026-09-10" },
+    { user_id: "member", version: 3, status: "in_progress", version_score: 99, completed_at: "2026-09-15" },
+  ],
+  architect_blueprints: [{ user_id: "member", status: "active", priorities: [], strengths: [], first_actions: [], updated_at: "2026-09-10" }],
+  goals: [], challenge_enrollments: [],
+  architect_cycles: [{ user_id: "member", id: "career-cycle", status: "active", focus: "Change careers", starts_on: "2026-09-01", ends_on: "2026-09-14", success_vision: "A useful application", plan_steps: ["Email contact"], commitment_rule: "shrink", created_at: "2026-09-01" }],
+  daily_focus_entries: [
+    { user_id: "member", id: "local-day", focus_date: "2026-09-14", completed: false, check_in: "progress", action: "Legacy", steps: [{ id: "x", text: "Email contact", done: true }, { id: "y", text: "Read reply", done: false }], cycle_id: "career-cycle", reflection: "MUST_NOT_BE_READ" },
+    { user_id: "member", id: "old-miss", focus_date: "2026-06-01", completed: false, action: "Call contact", steps: null, check_in: null, recovery: null },
+    { user_id: "member", id: "tomorrow", focus_date: "2026-09-15", completed: true, action: "Future entry must not count", steps: null },
+  ],
+};
+function fakeSupabase(failingTable?: string) {
+  return { from(table: string) {
+    const query = { table, columns: "", filters: [] as Array<[string, string, unknown]> }; queries.push(query);
+    let head = false, single = false, cap = Infinity, from = 0, to = Infinity;
+    const sorts: Array<[string, boolean]> = [];
+    const builder = {
+      select(columns: string, options?: { head?: boolean }) { query.columns = columns; head = Boolean(options?.head); return builder; },
+      eq(key: string, value: unknown) { query.filters.push(["eq", key, value]); return builder; },
+      in(key: string, value: unknown[]) { query.filters.push(["in", key, value]); return builder; },
+      lte(key: string, value: unknown) { query.filters.push(["lte", key, value]); return builder; },
+      order(key: string, options?: { ascending?: boolean }) { sorts.push([key, options?.ascending !== false]); return builder; },
+      limit(value: number) { cap = value; return builder; },
+      maybeSingle() { single = true; return builder; },
+      range(first: number, last: number) { from = first; to = last; return builder; },
+      then(resolve: (result: FakeResult) => unknown) {
+        let rows = [...(fixtures[table] || [])].filter(row => query.filters.every(([operation, key, value]) => operation === "eq" ? row[key] === value : operation === "in" ? (value as unknown[]).includes(row[key]) : String(row[key]) <= String(value)));
+        rows.sort((a, b) => { for (const [key, ascending] of sorts) { const difference = String(a[key] || "").localeCompare(String(b[key] || "")); if (difference) return ascending ? difference : -difference; } return 0; });
+        const count = rows.length;
+        rows = rows.slice(from, Math.min(to + 1, from + cap, table === "daily_focus_entries" ? from + 1 : Infinity));
+        rows = rows.map(row => Object.fromEntries(query.columns.split(",").filter(key => key in row).map(key => [key, row[key]])));
+        return Promise.resolve({ data: head ? null : single ? rows[0] || null : rows, count, error: table === failingTable ? { message: "read failed" } : null }).then(resolve);
+      },
+    };
+    return builder;
+  } } as unknown as SupabaseClient;
+}
+const loadedContext = await getKaiMemberContext(fakeSupabase(), "member", new Date("2026-09-15T03:30:00Z"));
+assert.equal(loadedContext.member?.today, "2026-09-14", "Kai must use the member’s date before midnight in New Jersey");
+assert.equal(loadedContext.dailyFocus?.id, "local-day");
+assert.equal(loadedContext.architectAssessment?.version_score, 59, "A later draft must not erase the latest completed score");
+assert.equal(loadedContext.progress.completedActionCount, 1, "Partial days must count real completed steps, while future entries must not count");
+assert.equal(loadedContext.progress.completedDailyFocusCount, 0);
+assert.equal(loadedContext.unresolvedActions?.[0]?.id, "old-miss", "Paging must not hide an old unresolved commitment");
+assert.equal(loadedContext.architectCycles[0]?.review_due, true);
+assert.deepEqual(loadedContext.architectCycles[0]?.remaining_steps, []);
+assert.equal(queries.some(query => /reflection|journal|outcome/.test(query.columns)), false, "Private notes must not be read automatically for Kai");
+assert.equal(queries.some(query => query.table === "architect_assessments" && query.filters.some(([, key]) => key === "version")), false);
+await assert.rejects(getKaiMemberContext(fakeSupabase("architect_blueprints"), "member"), /could not be loaded/, "A failed read must not manufacture zero progress");
 
 Object.assign(process.env, {
   OPENAI_API_KEY: "present-but-insufficient",

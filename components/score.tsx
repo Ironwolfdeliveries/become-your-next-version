@@ -10,7 +10,7 @@ const continuingValue = [
   "Version Score tracking",
   "Seven Pillar progress",
   "Personal guidance from Kai",
-  "Daily focus and actions",
+  "Daily plan and actions",
   "Journaling and reflection",
   "Challenges and guided Architect cycles",
   "Progress over time",

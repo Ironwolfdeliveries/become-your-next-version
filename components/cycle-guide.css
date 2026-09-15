@@ -1,0 +1,55 @@
+.cycle-guide,.orientation-guide{max-width:860px;margin-inline:auto;padding:38px;border:1px solid var(--line);background:linear-gradient(145deg,#181611,#111 60%);display:grid;gap:26px}
+.cycle-guide h2,.orientation-guide h2{font-size:clamp(2.25rem,5vw,3.5rem);line-height:1.07;overflow-wrap:anywhere}
+.cycle-guide h3,.orientation-guide h3{font-size:1.75rem;line-height:1.2;margin-bottom:14px;overflow-wrap:anywhere}
+.cycle-guide p,.orientation-guide p{color:#c3bcb0;margin:0;overflow-wrap:anywhere}
+.cycle-guide h2:focus,.orientation-guide h2:focus{outline:none}
+.cycle-guide .eyebrow,.orientation-guide .eyebrow{margin-bottom:10px;color:var(--gold)}
+.cycle-guide-kai{display:flex;align-items:center;gap:20px;padding-bottom:24px;border-bottom:1px solid #403729}
+.cycle-guide-kai .kai-avatar{width:76px;height:76px;flex:0 0 76px;border-radius:50%;overflow:hidden}
+.cycle-guide-kai .kai-avatar img{width:100%;height:100%;object-fit:cover}
+.cycle-guide-kai p:last-child{font-size:.92rem}
+.cycle-guide-stage{font-size:.875rem!important;color:var(--gold)!important;letter-spacing:.035em}
+.cycle-guide-context{padding:24px;border:1px solid #52432c;background:#211c13;display:grid;gap:12px;overflow-wrap:anywhere}
+.cycle-guide-context progress{width:100%;height:7px;accent-color:var(--gold)}
+.cycle-guide-context small,.cycle-guide-note{font-size:.875rem;color:var(--muted)}
+.cycle-guide-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+.cycle-guide-choice{display:grid;align-content:center;gap:8px;width:100%;text-align:left;background:#111;color:var(--cream);border:1px solid #4c453a;padding:18px;font-size:.9rem;line-height:1.5;overflow-wrap:anywhere}
+.cycle-guide-choice strong{font-size:1rem}.cycle-guide-choice span{font-size:.875rem;color:var(--muted)}
+.cycle-guide-choice:hover,.cycle-guide-choice:focus-visible,.cycle-guide-choice.selected{border-color:var(--gold);background:#272015}
+.cycle-guide-choice.recommended{border-color:var(--gold);background:#211c13}
+.cycle-guide-details{padding:18px 0;border-block:1px solid var(--line)}
+.cycle-guide-details summary{cursor:pointer;color:var(--cream)}
+.cycle-guide form,.cycle-guide-review{display:grid;gap:22px}
+.cycle-guide-field{display:grid;gap:9px;font-size:.9rem;color:var(--cream);margin-block:6px}
+.cycle-guide-field span{font-size:.875rem;color:var(--muted)}
+.cycle-guide-field input,.cycle-guide-field textarea{width:100%;min-width:0;padding:14px;border:1px solid #524b40;background:#0d0d0d;color:var(--cream);font-size:1rem;resize:vertical}
+.cycle-guide-field input:focus-visible,.cycle-guide-field textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.cycle-guide-actions,.cycle-guide-footer{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.cycle-guide-actions{margin-top:12px}.cycle-guide-actions>a:not(.button),.cycle-guide-footer>a{color:var(--gold);font-size:.875rem;text-decoration:underline;text-underline-offset:4px}
+.cycle-guide-step-list{display:grid;gap:12px;list-style:none;counter-reset:cycleStep;padding:0;margin:8px 0}
+.cycle-guide-step-list>li{display:flex;gap:16px;padding:18px;border:1px solid var(--line);background:#111;align-items:flex-start;overflow-wrap:anywhere}
+.cycle-guide-step-list>li:before{counter-increment:cycleStep;content:counter(cycleStep);width:26px;height:26px;flex:0 0 26px;text-align:center;background:#302819;color:var(--gold);font-size:.875rem}
+.cycle-guide-step-body{width:100%;min-width:0;display:grid;gap:15px}.cycle-guide-mini-actions{display:flex;gap:15px;flex-wrap:wrap}
+.cycle-guide-text{padding:0;background:none;color:var(--gold);border:none;text-decoration:underline;text-underline-offset:4px;font-size:.875rem;justify-self:start}
+.cycle-guide-text:disabled{opacity:.5;cursor:not-allowed}
+.cycle-guide-rules{border:0;padding:0;margin:0;display:grid;gap:8px}
+.cycle-guide-rules legend{margin-bottom:15px}.cycle-guide-rules legend span{font-size:.875rem;color:var(--muted);margin-left:10px}
+.cycle-guide-rules label{display:flex;align-items:center;gap:13px;padding:13px 15px;background:#111;border:1px solid var(--line);font-size:.88rem;cursor:pointer}
+.cycle-guide-rules input{accent-color:var(--gold);width:17px;height:17px;flex:0 0 17px}
+.cycle-guide-rules label:has(input:checked){border-color:var(--gold);background:#211c13}
+.cycle-guide-footer{padding-top:26px;margin-top:12px;border-top:1px solid var(--line);justify-content:space-between}
+.cycle-guide-message{padding:16px;border-left:3px solid var(--gold);background:#241f16}
+.cycle-guide-momentum{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--line)}
+.cycle-guide-momentum>div{padding:20px;display:grid;gap:6px}.cycle-guide-momentum>div+div{border-left:1px solid var(--line)}
+.cycle-guide-momentum strong{font:500 2.6rem var(--font-cormorant);color:var(--gold)}.cycle-guide-momentum span{font-size:.875rem;color:var(--muted)}
+.cycle-guide-review{padding-top:26px;border-top:1px solid var(--line)}.cycle-guide-review blockquote{margin:0;border-left:2px solid var(--gold);padding-left:18px;color:#c8c0b4}
+.orientation-guide{gap:26px}.orientation-guide>progress{width:100%;height:5px;accent-color:var(--gold)}
+.orientation-guide-visual{padding:28px;border:1px solid #58472b;background:radial-gradient(ellipse at top right,#322818,#171511 70%);display:grid;gap:16px}
+.orientation-guide-visual>strong{font-size:1.3rem;font-weight:500;color:var(--cream)}
+.orientation-guide-visual>span{font-size:.875rem;color:var(--muted)}
+.orientation-guide-area{display:grid;gap:5px;padding:16px 0;border-bottom:1px solid #403729}
+.orientation-guide-area span{font-size:.875rem;color:var(--muted)}.orientation-guide-area strong{color:var(--cream)}
+.orientation-guide-checks{display:flex;flex-wrap:wrap;gap:10px}.orientation-guide-checks span{padding:10px 14px;border:1px solid #645334;color:var(--cream);font-size:.875rem}
+.orientation-guide video{width:100%;max-height:480px;background:#000}
+@media(max-width:600px){.cycle-guide,.orientation-guide{padding:24px 18px;gap:22px}.cycle-guide-kai{gap:13px}.cycle-guide-kai .kai-avatar{width:58px;height:58px;flex-basis:58px}.cycle-guide-kai .eyebrow{font-size:.875rem}.cycle-guide-choices{grid-template-columns:1fr}.cycle-guide-context,.orientation-guide-visual{padding:19px}.cycle-guide-actions{align-items:stretch;flex-direction:column}.cycle-guide-actions .button{width:100%;text-align:center}.cycle-guide-step-list>li{padding:14px;gap:11px}.cycle-guide-footer{align-items:flex-start;flex-direction:column}.cycle-guide-momentum>div{padding:16px 13px}.cycle-guide-field input{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.cycle-guide *,.orientation-guide *{scroll-behavior:auto;transition:none}}

@@ -8,10 +8,11 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "npm run lint && npm run typecheck && npm run test:guided-kai && npm run test:billing-gate && npm run test:journey",
+    "test": "npm run lint && npm run typecheck && npm run test:guided-kai && npm run test:billing-gate && npm run test:journey && npm run test:experience",
     "test:journey": "node --experimental-strip-types test/journey.test.ts",
     "test:guided-kai": "node --experimental-strip-types test/guided-kai.test.ts",
-    "test:billing-gate": "node --experimental-strip-types test/billing-gate.test.ts && node --experimental-strip-types test/billing-access.test.ts"
+    "test:billing-gate": "node --experimental-strip-types test/billing-gate.test.ts && node --experimental-strip-types test/billing-access.test.ts",
+    "test:experience": "node --experimental-strip-types test/experience.test.ts && node --experimental-strip-types test/library-access.test.ts && node --experimental-strip-types test/assessment-contract.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

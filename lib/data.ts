@@ -4,7 +4,7 @@ export type Product = { name: string; category: string; price: string; descripti
 export const navigation: NavItem[] = [
   { label: "Mission", href: "/mission" }, { label: "Method", href: "/framework" },
   { label: "Membership", href: "/membership" }, { label: "Kai", href: "/kai" },
-  { label: "Resources", href: "/resources" }, { label: "Shop", href: "/merchandise" }
+  { label: "Architect Library", href: "/resources" }, { label: "Shop", href: "/merchandise" }
 ];
 
 export const pillars = [
@@ -38,6 +38,6 @@ export const faqs = [
   ["What can Kai do?", "Kai can explain BYNV, use the progress and goals you choose to save, suggest a useful next action, help you understand your Version Score and Blueprint, review progress, support goals, and build prompts you can use with another AI assistant."],
   ["Can Kai replace a therapist or professional adviser?", "No. Kai is a reflection and planning guide, not a substitute for medical, mental-health, legal, financial or other qualified professional support."],
   ["Can I buy merchandise now?", "Not yet. The storefront shows real visual mockups and planned retail details, but inventory, fulfillment and checkout are not connected, so BYNV does not accept merchandise payment."],
-  ["What happens when I create an account?", "You can save your Version Snapshot and return to your Architect Assessment, Blueprint, Daily Focus, goals, journal entries, and progress from your account."],
+  ["What happens when I create an account?", "You can save your Version Snapshot and return to your Architect Assessment, Blueprint, Today’s Plan, goals, journal entries, and progress from your account."],
   ["How is my assessment data used?", "Your answers calculate your scores and shape your private BYNV experience. Kai may use the BYNV information you choose to save to give relevant guidance. Journal entries are excluded." ]
 ];
