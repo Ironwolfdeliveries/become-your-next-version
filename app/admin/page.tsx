@@ -296,7 +296,7 @@ export default async function AdminPage() {
                     </dd>
                   </div>
                   <div>
-                    <dt>Last Daily OS activity</dt>
+                    <dt>Last Today’s Plan activity</dt>
                     <dd>
                       {lastActivity.has(member.id)
                         ? new Date(

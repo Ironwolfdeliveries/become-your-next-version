@@ -57,7 +57,7 @@ export default function Kai() {
             <span>02</span>
             <h3>Act</h3>
             <p>
-              Identify a next step, break down goals, use your Daily OS, stay
+              Identify a next step, break down goals, use your Today’s Plan, stay
               connected to priorities, and review real progress.
             </p>
           </article>
@@ -89,7 +89,7 @@ export default function Kai() {
             <p className="eyebrow">Connected to your journey</p>
             <h2>Kai understands the BYNV context you choose to save.</h2>
             <p>
-              As you build your Blueprint, set goals, choose a Daily Focus,
+              As you build your Blueprint, set goals, choose a Today’s Plan,
               work through Architect Cycles, face challenges, and record
               progress, Kai can connect what you are doing today to the version
               you are trying to become.

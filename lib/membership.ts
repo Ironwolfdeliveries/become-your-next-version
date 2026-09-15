@@ -6,7 +6,7 @@ export const membershipTiers = {
     label: "Start here",
     description: "Start building your next version with the complete BYNV foundation.",
     pricing: ["Days 1–30: $0", "Days 31–90: $19.99/month", "Day 91 onward: $29.99/month"],
-    benefits: ["BYNV platform access", "Version Snapshot and Architect Assessment", "Version Score and personal Blueprint", "Daily OS, goals, journal, cycles, and progress", "Kai guidance based on your saved BYNV progress", "AI prompt builder for ChatGPT, Claude, Gemini, and other tools", "Core Community and challenges", "Core downloadable resources"],
+    benefits: ["BYNV platform access", "Version Snapshot and Architect Assessment", "Version Score and personal Blueprint", "Today’s Plan, goals, journal, cycles, and progress", "Kai guidance based on your saved BYNV progress", "AI prompt builder for ChatGPT, Claude, Gemini, and other tools", "Core Community and challenges", "Core downloadable resources"],
     availability: "Secure monthly checkout is provided through Stripe.",
   },
   builder: {
