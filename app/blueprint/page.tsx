@@ -1,3 +1,5 @@
+import { AreaHelp } from "@/components/area-help";
+import { getAreaGuidance } from "@/lib/area-guidance";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button, MemberHeader as PageHero } from "@/components/ui";
@@ -46,6 +48,7 @@ export default async function BlueprintPage() {
     <section className="container journey-suggestion" aria-labelledby="blueprint-kai-heading">
       <div className="kai-result-head"><KaiAvatar className="kai-result-mark" /><div><p className="eyebrow">Kai · Your next move</p><h2 id="blueprint-kai-heading">Your Blueprint is ready.</h2></div></div>
       {blueprint ? <p>{strength ? `${strength.label} is one of your strongest foundations. ` : ""}{opportunity ? `${opportunity.label} has the most room for focused support. Do you want to start there, or is something else more important right now?` : "What would you most like to improve over the next two weeks?"}</p> : <p>Your assessment and score are saved. The associated Blueprint details are unavailable right now. You can still choose a priority and build a plan with Kai.</p>}
+      {opportunity && <AreaHelp areaKey={opportunity.key} actionable />}
       <div className="button-row">
         <Button href={nextHref}>{journey.cycle ? "Continue today’s plan" : opportunity ? `Start with ${opportunity.label}` : "Choose my first priority"}</Button>
         {!journey.cycle && <Button href="/architect-cycle?choose=1" secondary>Choose something else</Button>}
@@ -54,10 +57,10 @@ export default async function BlueprintPage() {
     </section>
     <div className="container blueprint-layout">
       <section className="blueprint-score"><p className="eyebrow">Saved Version Score</p><strong>{assessment.version_score ?? "—"}<span>/100</span></strong><p>A starting point to compare over time. Your saved result stays intact when you take a new assessment.</p><Button href="/progress" secondary>See my progress</Button></section>
-      <section className="blueprint-section"><p className="eyebrow">Your seven areas</p><h2>A clearer picture.</h2><div className="signal-list">{sections.map((item) => <article key={item.key}><strong>{item.label}</strong><span>{item.score}/100</span></article>)}</div></section>
+      <section className="blueprint-section"><p className="eyebrow">Your seven areas</p><h2>A clearer picture.</h2><div className="signal-list">{sections.map((item) => <article key={item.key}><div><strong>{item.label}</strong><AreaHelp areaKey={item.key} /></div><span>{item.score}/100</span></article>)}</div></section>
       <section className="blueprint-section blueprint-actions">
         <p className="eyebrow">Put it to work</p><h2>One small step is enough to begin.</h2>
-        {firstActions[0] && <p>{firstActions[0].action}</p>}
+        {firstActions[0] && <p>{getAreaGuidance(firstActions[0].key)?.actions[0] ?? firstActions[0].action}</p>}
         <div className="button-row"><Button href={nextHref}>{journey.cycle ? "Open today’s plan" : "Build my 14-day plan with Kai"}</Button><KaiPrompt prompt="Explain my Blueprint briefly and help me choose the one area I most want to improve over the next 14 days.">Talk it through with Kai</KaiPrompt></div>
       </section>
       <section className="blueprint-section blueprint-actions">

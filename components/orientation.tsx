@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { changeExperience, loadExperience, type Experience } from "@/lib/experience";
+import { AreaHelp } from "./area-help";
+import { resolveAreaKey } from "@/lib/area-guidance";
 import { KaiAvatar } from "./kai-avatar";
 import "./cycle-guide.css";
 
@@ -54,8 +56,8 @@ export function Orientation({ video }: { video?: { src: string; captions: string
     <p className="eyebrow">{step + 1} / {orientationSteps.length} · {current.label}</p>
     <h2 ref={heading} tabIndex={-1}>{current.title}</h2><p>{current.text}</p>
     <div className="orientation-guide-visual">
-      {step === 0 && <>{context.score !== null && <><span>Your starting Version Score</span><strong>{context.score} / 100</strong></>}{context.strengths[0] && <div className="orientation-guide-area"><span>Your strongest area</span><strong>{context.strengths[0].label}</strong></div>}{context.priorities[0] && <div className="orientation-guide-area"><span>Your biggest opportunity</span><strong>{context.priorities[0].label}</strong></div>}<span>A useful starting point. You decide what to do with it.</span></>}
-      {step === 1 && <><span>You can start with</span><strong>{context.cycle?.focus || context.priorities[0]?.label || "The change that matters most to you"}</strong><span>{context.cycle ? "Your current Cycle is already saved. This walkthrough keeps it in place." : "Or choose another goal or area of your life. Your results guide the conversation; you choose the priority."}</span></>}
+      {step === 0 && <>{context.score !== null && <><span>Your starting Version Score</span><strong>{context.score} / 100</strong></>}{context.strengths[0] && <div className="orientation-guide-area"><span>Your strongest area</span><strong>{context.strengths[0].label}</strong><AreaHelp areaKey={context.strengths[0].key} /></div>}{context.priorities[0] && <div className="orientation-guide-area"><span>Your biggest opportunity</span><strong>{context.priorities[0].label}</strong><AreaHelp areaKey={context.priorities[0].key} /></div>}<span>A useful starting point. You decide what to do with it.</span></>}
+      {step === 1 && <><span>You can start with</span><strong>{context.cycle?.focus || context.priorities[0]?.label || "The change that matters most to you"}</strong><AreaHelp areaKey={context.cycle ? resolveAreaKey(context.cycle.pillar_key, context.cycle.focus) : context.priorities[0]?.key} /><span>{context.cycle ? "Your current Cycle is already saved. This walkthrough keeps it in place." : "Or choose another goal or area of your life. Your results guide the conversation; you choose the priority."}</span></>}
       {step === 2 && <><span>One direction · 14 days · small, concrete steps</span><strong>What would feel meaningfully different in two weeks?</strong><span>We&apos;ll build around your answer, with room to adjust.</span></>}
       {step === 3 && <><span>{context.daily?.priority ? "Your saved priority" : "Example of a useful first step"}</span><strong>{context.daily?.priority || "Clear the space I need to focus"}</strong><span>{context.daily?.action || "Spend 10 minutes preparing one surface for tomorrow's important task."}</span></>}
       {step === 4 && <><div className="orientation-guide-checks"><span>Got it done</span><span>Made progress</span><span>Didn&apos;t happen</span></div><strong>“What got in the way?”</strong><span>Then choose: keep the step, make it smaller, move it, or change the approach.</span></>}
