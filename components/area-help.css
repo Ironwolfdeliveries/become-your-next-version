@@ -1,0 +1,9 @@
+.area-help{margin:.65rem 0 1rem;max-width:65ch;text-align:left;font-weight:400}
+.area-help .area-help-meaning,.area-help .area-help-tip,.area-help-kai p{font-size:1rem;line-height:1.55;margin:.4rem 0}
+.area-help-meaning strong{font-size:inherit;display:inline;color:inherit}
+.area-help-kai summary{cursor:pointer;font-size:.9375rem;line-height:1.5;min-height:44px;padding:.6rem 0;text-decoration:underline;text-underline-offset:3px}
+.area-help-kai summary span:not(.sr-only){font-weight:600}
+.area-help-kai summary:focus-visible{outline:2px solid currentColor;outline-offset:4px;border-radius:4px}
+.area-help-kai[open]{padding-bottom:.5rem}
+.area-help .area-help-examples{font-size:.9375rem}
+.area-choice-meaning{display:block;font-weight:400;font-size:.9375rem;line-height:1.5;margin-top:.35rem}

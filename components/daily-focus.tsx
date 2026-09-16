@@ -10,41 +10,13 @@ import {
 import { AILeverageAudit } from "./ai-leverage-audit";
 import { KaiAvatar } from "./kai-avatar";
 import { KaiPrompt } from "./kai-prompt";
+import { AreaHelp } from "./area-help";
+import { priorityAreaKey, recommendPlan } from "@/lib/plan-recommendation";
 import "./todays-plan.css";
 
 const newStep = (text = ""): PlanStep => ({ id: crypto.randomUUID(), text, done: false });
-const clean = (value: string) => value.trim().toLocaleLowerCase();
 function readableDate(date: string) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
-}
-
-function recommendation(experience: Experience, selectedPriority: string) {
-  const cycle = experience.cycle;
-  const goal = experience.goals.find(item => item.status === "active");
-  const area = experience.priorities[0];
-  const defaultPriority = cycle?.focus || goal?.title || area?.label || "Make room for what matters today";
-  const priority = (selectedPriority.trim() || defaultPriority).slice(0, 200);
-  let source = "A small start for your priority";
-  let actions: string[] = [];
-  if (cycle && clean(priority) === clean(cycle.focus.slice(0, 200))) {
-    source = "From your current Architect Cycle";
-    const completedActions = new Set(experience.recent.filter(entry => entry.cycle_id === cycle.id)
-      .flatMap(entry => entrySteps(entry).filter(step => step.done).map(step => clean(step.text))));
-    const cycleActions = cycle.plan_steps?.filter(Boolean) || [];
-    actions = cycleActions.filter(action => !completedActions.has(clean(action))).slice(0, 3);
-    if (cycleActions.length && !actions.length) actions = [`Review what changed in “${cycle.focus}” and choose one useful next step for the rest of this Cycle.`];
-  } else {
-    const matchingGoal = experience.goals.find(item => item.status === "active" && clean(item.title.slice(0, 200)) === clean(priority));
-    if (matchingGoal) {
-      source = "From your active goal";
-      actions = [`Spend 10 minutes taking one small step toward “${matchingGoal.title}”.`];
-    } else if (area && clean(priority) === clean(area.label)) {
-      source = "A starting point from your Blueprint";
-      actions = experience.firstActions.filter(item => item.key === area.key).map(item => item.action).slice(0, 3);
-    }
-  }
-  if (!actions.length) actions = [`Set aside 10 minutes for “${priority}” and complete the smallest useful first step.`];
-  return { priority, source, actions };
 }
 
 function RecoveryCard({ entry, experience, disabled, hasUnsavedChanges, onRecovered, onPending }: {
@@ -172,7 +144,7 @@ export function DailyFocus() {
     <p role={loadError ? "alert" : "status"}>{loadError || "Kai is bringing together your saved plan, Cycle, and progress…"}</p>
     {loadError && <button className="button" onClick={() => { setLoadError(""); void load().catch(error => setLoadError(error instanceof Error ? error.message : "Your plan could not be loaded.")); }}>Try again</button>}
   </section>;
-  const suggested = recommendation(experience, priority);
+  const suggested = recommendPlan(experience, priority);
   const stats = momentum(experience.recent, experience.today);
   const completedCount = steps.filter(step => step.done).length;
   const savedCheckIn = entryStatus(experience.daily);
@@ -199,13 +171,14 @@ export function DailyFocus() {
       <div className="today-card-heading"><div><p className="eyebrow">Today’s Priority</p><h2 id="today-priority-title">{priority || "What matters most today?"}</h2></div>
         {priority && <button type="button" className="text-button" onClick={() => setEditPriority(value => !value)} disabled={disabled}>{editPriority ? "Close priority editor" : "Change priority"}</button>}
       </div>
+      {priority && <AreaHelp areaKey={priorityAreaKey(experience, priority)} actionable />}
       {(editPriority || (steps.length > 0 && !priority)) && <div className="today-priority-editor"><label>What matters most today?<input ref={priorityRef} value={priority} onChange={event => { setPriority(event.target.value); changed(); }} maxLength={200} disabled={disabled} placeholder="Choose a direction that matters to you" /></label>
         {(experience.cycle || experience.goals.some(goal => goal.status === "active")) && <div className="today-priority-choices" role="group" aria-label="Use a priority you already chose">
           {experience.cycle && <button type="button" disabled={disabled} onClick={() => { setPriority(experience.cycle!.focus.slice(0, 200)); setShowSuggestion(true); changed(); }}>Use my Cycle focus</button>}
           {experience.goals.filter(goal => goal.status === "active").slice(0, 3).map(goal => <button key={goal.id} type="button" disabled={disabled} onClick={() => { setPriority(goal.title.slice(0, 200)); setShowSuggestion(true); changed(); }}>{goal.title}</button>)}
         </div>}
       </div>}
-      {(!steps.length || showSuggestion) && <div className="today-suggestion"><p className="eyebrow">{suggested.source}</p><h3>{suggested.priority}</h3><ul>{suggested.actions.map((action, index) => <li key={index}>{action}</li>)}</ul>
+      {(!steps.length || showSuggestion) && <div className="today-suggestion"><p className="eyebrow">{suggested.source}</p><h3>{suggested.priority}</h3>{!priority && <AreaHelp areaKey={suggested.areaKey} actionable />}<ul>{suggested.actions.map((action, index) => <li key={index}>{action}</li>)}</ul>
         <div className="button-row"><button type="button" className="button" disabled={disabled} onClick={() => void save(suggested.actions.map(action => newStep(action)), null, suggested.priority)}>Use this plan</button>
           <button type="button" className="button secondary" disabled={disabled} onClick={customize}>Build my own</button>
           {showSuggestion && steps.length > 0 && <button type="button" className="text-button" onClick={() => setShowSuggestion(false)}>Keep current steps</button>}

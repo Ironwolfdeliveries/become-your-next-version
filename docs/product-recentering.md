@@ -34,9 +34,11 @@ No checkout price, Stripe webhook/portal behavior, Kai cost cap, live beta setti
 
 ## Release status
 
-The complete implementation is committed on the local codex/product-recentering branch. Both additive database migrations have been applied and verified in production; their filenames match the actual migration-history versions.
+The owner approved publication, merge and deployment on September 15, 2026. The implementation shipped through PR #6 as commit ee9f974; production deployment dpl_CwntX83HGtDvnpDqyFaroqrf7N6x reached READY. Both additive database migrations were already applied and verified; their filenames match the actual migration-history versions.
 
-Publication of the application code is blocked. Automatic approval review rejected the GitHub push because the request did not explicitly authorize publishing changes to the public repository. The code has not been pushed, merged or deployed. The production website still serves baseline 556a480. The next action requiring owner approval is publishing this finished branch to Ironwolfdeliveries/become-your-next-version, merging after CI/preview verification, and deploying the member experience while preserving the public paid-enrollment hold.
+GitHub CI, preview and production builds passed. Live checks confirmed the new Library, working free-access filtering and free guide, premium access restriction, an unauthenticated experience API rejection, and HTTP 503 from checkout with the paid-enrollment-paused message. No error/fatal runtime logs appeared in the short release scan. The authenticated walkthrough limitation above remains.
+
+Release record: https://github.com/Ironwolfdeliveries/become-your-next-version/pull/6
 
 ## Reproduce the database checks
 

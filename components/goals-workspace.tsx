@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { AreaHelp } from "./area-help";
+import { getAreaGuidance } from "@/lib/area-guidance";
 import { architectSections } from "@/lib/architect-assessment";
 import { commitmentRules, type CommitmentRule, type Goal } from "@/lib/experience";
 import { createClient } from "@/lib/supabase/client";
@@ -91,6 +93,7 @@ export function GoalsWorkspace({ userId }: { userId: string }) {
     return <article className={`guided-goal-card${isComplete ? " is-complete" : ""}`} key={goal.id}>
       <p className="eyebrow">{architectSections.find(area => area.key === goal.pillar_key)?.label ?? "Personal goal"}{isComplete ? " · Complete" : ""}</p>
       <h3>{goal.title}</h3>
+      <AreaHelp areaKey={goal.pillar_key} />
       {goal.success_vision && <p className="goal-success"><span>Success looks like</span>{goal.success_vision}</p>}
       <div className="goal-facts">
         {goal.target_date && <time dateTime={goal.target_date}>Progress by {new Date(`${goal.target_date}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</time>}
@@ -116,7 +119,8 @@ export function GoalsWorkspace({ userId }: { userId: string }) {
         <fieldset disabled={pending}>
           {step === 0 && <><label className="goal-field"><span>A short phrase is enough.</span><input autoComplete="off" name="goalTitle" aria-label="What do you want to change or achieve?" required maxLength={160} value={draft.title} onChange={event => updateDraft("title", event.target.value)} placeholder="Protect time for what matters" /></label><p className="field-help">Choose something that matters to you. You can refine it as you learn.</p></>}
           {step === 1 && <><p className="goal-context">You’re working toward: <strong>{draft.title}</strong></p><label className="goal-field"><span>What would be noticeably different?</span><textarea name="success" aria-label="What would success look like?" rows={3} maxLength={600} value={draft.success} onChange={event => updateDraft("success", event.target.value)} placeholder="I have two evenings a week for the things I keep putting off." /></label><p className="field-help">One sentence helps Kai shape the plan. You can also leave this open for now.</p></>}
-          {step === 2 && <div className="goal-area-options" role="group" aria-label="Area of your life">{architectSections.map(area => <button className={draft.area === area.key ? "selected" : ""} type="button" aria-pressed={draft.area === area.key} key={area.key} onClick={() => updateDraft("area", area.key)}>{area.label}</button>)}<button type="button" className={!draft.area ? "selected" : ""} aria-pressed={!draft.area} onClick={() => updateDraft("area", "")}>I’ll decide later</button></div>}
+          {step === 2 && <div className="goal-area-options" role="group" aria-label="Area of your life">{architectSections.map(area => <button className={draft.area === area.key ? "selected" : ""} type="button" aria-pressed={draft.area === area.key} key={area.key} onClick={() => updateDraft("area", area.key)}><strong>{area.label}</strong><span className="area-choice-meaning">{getAreaGuidance(area.key)?.meaning}</span></button>)}<button type="button" className={!draft.area ? "selected" : ""} aria-pressed={!draft.area} onClick={() => updateDraft("area", "")}>I’ll decide later</button></div>}
+          {step >= 2 && <AreaHelp areaKey={draft.area} />}
           {step === 3 && <><dl className="goal-review"><div><dt>What I’m building</dt><dd>{draft.title}<button type="button" onClick={() => setStep(0)}>Edit</button></dd></div><div><dt>Success looks like</dt><dd>{draft.success || "I’ll make this clearer as I build."}<button type="button" onClick={() => setStep(1)}>Edit</button></dd></div><div><dt>Part of my life</dt><dd>{selectedArea?.label ?? "I’ll decide later"}<button type="button" onClick={() => setStep(2)}>Edit</button></dd></div></dl>
             <details className="goal-options" open={draft.targetDate || draft.rule ? true : undefined}><summary>Timing & a commitment rule <span>Optional</span></summary><label className="goal-field"><span>When would you like to make meaningful progress?</span><input type="date" name="targetDate" value={draft.targetDate} onChange={event => updateDraft("targetDate", event.target.value)} /></label><label className="goal-field"><span>If I miss a commitment, I will…</span><select name="commitmentRule" value={draft.rule} onChange={event => updateDraft("rule", event.target.value)}><option value="">No rule for now</option>{commitmentRules.map(rule => <option key={rule.key} value={rule.key}>{rule.label}</option>)}</select></label><p className="field-help">A way back when life interrupts. Kai uses this when you build a Cycle from this goal.</p></details></>}
           <div className="goal-wizard-actions">{step > 0 && <button type="button" className="button secondary" onClick={() => setStep(step - 1)}>Back</button>}<button className="button" type="submit">{pending ? "Saving…" : step === 3 ? editingId ? "Save changes" : "Save my goal" : "Continue"}</button></div>

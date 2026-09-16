@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AreaHelp } from "./area-help";
 import { architectQuestionCount, architectScoredQuestionCount, architectSections, type ArchitectAnswers } from "@/lib/architect-assessment";
 import { createClient } from "@/lib/supabase/client";
 import { trackAnalyticsEvent } from "@/lib/analytics-client";
@@ -145,7 +146,7 @@ export function ArchitectAssessment({ reassess = false, reviewVersion }: { reass
       </div>
       <p className="field-help">A new assessment creates a separate record so you can compare change over time. These completed answers stay intact.</p>
       <div className="architect-questions">
-        {architectSections.map((item) => <details className="architect-question" key={item.key}><summary>{item.label}</summary><dl>{item.questions.map((question) => <div key={question.id}><dt>{question.prompt}</dt><dd>{question.type === "scale" ? `${answers[question.id] ?? "Not answered"}${typeof answers[question.id] === "number" ? ` / 5 — ${question.scaleLabels?.[Number(answers[question.id]) - 1] ?? ""}` : ""}` : String(answers[question.id] || "No optional reflection added.")}</dd></div>)}</dl></details>)}
+        {architectSections.map((item) => <details className="architect-question" key={item.key}><summary>{item.label}</summary><AreaHelp areaKey={item.key} /><dl>{item.questions.map((question) => <div key={question.id}><dt>{question.prompt}</dt><dd>{question.type === "scale" ? `${answers[question.id] ?? "Not answered"}${typeof answers[question.id] === "number" ? ` / 5 — ${question.scaleLabels?.[Number(answers[question.id]) - 1] ?? ""}` : ""}` : String(answers[question.id] || "No optional reflection added.")}</dd></div>)}</dl></details>)}
       </div>
     </section>
   );
@@ -155,7 +156,7 @@ export function ArchitectAssessment({ reassess = false, reviewVersion }: { reass
         <div>
           <p className="eyebrow">Section {sectionIndex + 1} of {architectSections.length} · {architectQuestionCount} questions{assessment.version > 1 ? ` · Assessment ${assessment.version}` : ""}</p>
           <h2 id="architect-section-title">{section.label}</h2>
-          <p>{section.description}</p>
+          <AreaHelp areaKey={section.key} />
         </div>
         <div className={`save-indicator ${saveState}`} role="status">{saveState === "saving" || saveState === "pending" ? "Saving…" : saveState === "error" ? "Not saved" : "Saved"}</div>
       </header>

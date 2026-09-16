@@ -8,22 +8,15 @@ import { changeExperience, commitmentRules, entrySteps, loadExperience, type Com
 import { cycleProgress } from "@/lib/journey";
 import { KaiAvatar } from "./kai-avatar";
 import { KaiPrompt } from "./kai-prompt";
+import { AreaHelp } from "./area-help";
+import { areaGuidance, getAreaGuidance, resolveAreaKey } from "@/lib/area-guidance";
 import "./cycle-guide.css";
 
-const suggestions: Record<string, string[]> = {
-  clarity: ["Take 5 minutes to choose the one priority that deserves time today.", "Protect a 10-minute window in your calendar for that priority.", "Before accepting a new task, check whether it supports your priority."],
-  energy: ["Take a 5-minute screen-free break at a time you can protect today.", "Choose a realistic time to begin winding down tonight.", "Notice one thing that drained your energy today and make a small adjustment."],
-  action: ["Set a 10-minute timer and begin the important action you have been putting off.", "Put the tool or reminder you need for tomorrow in plain sight.", "Remove one distraction before your next short work session."],
-  resilience: ["Choose one recent obstacle and take 5 minutes to identify a next step you control.", "Spend 10 minutes trying a smaller version of the step that stalled.", "Name one useful lesson from your last attempt before trying again."],
-  relationships: ["Send a thoughtful check-in to one person you want to stay connected with.", "Ask someone you trust for one specific kind of support.", "Protect 10 minutes for a conversation without looking at your phone."],
-  environment: ["Spend 10 minutes clearing the space you need for your next important task.", "Put the tools for tomorrow's priority in one easy-to-find place.", "Turn off one recurring distraction for your next focused session."],
-  growth: ["Take 5 minutes to notice one action that helped you this week.", "Practice a skill tied to your current priority for 10 minutes.", "Choose one adjustment to try after reviewing your last attempt."],
-};
+const suggestions: Record<string, readonly string[]> = Object.fromEntries(Object.entries(areaGuidance).map(([key, area]) => [key, area.actions]));
 
-function suggestedSteps(context: Experience, pillar: string | null, focus: string, isGoal = false) {
-  const areaSuggestions = suggestions[pillar ?? ""] ?? [];
-  const blueprintAction = context.firstActions.find(item => item.key === pillar)?.action;
-  const first = isGoal ? `Spend 10 minutes taking the smallest useful step toward: ${focus}` : blueprintAction || areaSuggestions[0] || `Spend 10 minutes taking the smallest useful step toward: ${focus}`;
+function suggestedSteps(pillar: string | null, focus: string, isGoal = false) {
+  const areaSuggestions = suggestions[resolveAreaKey(pillar, focus) ?? ""] ?? [];
+  const first = isGoal ? `Choose one task that would move “${focus}” forward, then spend 10 minutes starting it.` : areaSuggestions[0] || `Choose one task that would move “${focus}” forward, then spend 10 minutes starting it.`;
   return [first.slice(0, 500)];
 }
 
@@ -57,7 +50,7 @@ export function ArchitectCycle({ initialGoalId = "", chooseAnother = false }: { 
       if (goal && !data.cycle && !initialGoalApplied.current) {
         initialGoalApplied.current = true;
         setFocus(goal.title); setPillar(goal.pillar_key); setGoalId(goal.id); setSuccess(goal.success_vision ?? "");
-        setRule(goal.commitment_rule); setSteps(suggestedSteps(data, goal.pillar_key, goal.title, true));
+        setRule(goal.commitment_rule); setSteps(suggestedSteps(goal.pillar_key, goal.title, true));
         setStage(goal.success_vision ? "steps" : "success");
       }
     } catch (error) { setMessage(error instanceof Error ? error.message : "Your Cycle could not be loaded. Please try again."); }
@@ -69,7 +62,7 @@ export function ArchitectCycle({ initialGoalId = "", chooseAnother = false }: { 
   function choose(title: string, key: string | null, goal?: Goal) {
     if (!context || !title.trim()) return;
     setFocus(title.trim()); setPillar(key); setGoalId(goal?.id ?? null); setSuccess(goal?.success_vision ?? "");
-    setRule(goal?.commitment_rule ?? null); setSteps(suggestedSteps(context, key, title.trim(), Boolean(goal)));
+    setRule(goal?.commitment_rule ?? null); setSteps(suggestedSteps(key, title.trim(), Boolean(goal)));
     setEditingStep(null); setMessage(""); setStage(goal?.success_vision ? "steps" : "success");
   }
 
@@ -119,7 +112,7 @@ export function ArchitectCycle({ initialGoalId = "", chooseAnother = false }: { 
     {message && <p className="cycle-guide-message" role="status">{message}</p>}
 
     {cycle && progress ? <>
-      <div className="cycle-guide-context"><span className="eyebrow">Your current Architect Cycle</span><h2 ref={heading} tabIndex={-1}>{cycle.focus}</h2>{cycle.success_vision && <p><strong>You want to see:</strong> {cycle.success_vision}</p>}<p>Day {progress.day} of {progress.total} · {due ? "Ready to review" : `Review on ${cycle.ends_on}`}</p><progress value={progress.day} max={progress.total} aria-label="Days through this Cycle" /><small>Time through your Cycle. Your actions show what changed.</small></div>
+      <div className="cycle-guide-context"><span className="eyebrow">Your current Architect Cycle</span><h2 ref={heading} tabIndex={-1}>{cycle.focus}</h2><AreaHelp areaKey={resolveAreaKey(cycle.pillar_key, cycle.focus)} actionable />{cycle.success_vision && <p><strong>You want to see:</strong> {cycle.success_vision}</p>}<p>Day {progress.day} of {progress.total} · {due ? "Ready to review" : `Review on ${cycle.ends_on}`}</p><progress value={progress.day} max={progress.total} aria-label="Days through this Cycle" /><small>Time through your Cycle. Your actions show what changed.</small></div>
       <div className="cycle-guide-momentum"><div><strong>{actionsCompleted}</strong><span>actions completed</span></div><div><strong>{progressDays}</strong><span>check-ins with progress</span></div></div>
       {cycle.plan_steps?.length > 0 && <div><h3>Your small starting steps</h3><ol className="cycle-guide-step-list">{cycle.plan_steps.map((step, index) => <li key={index}>{step}</li>)}</ol></div>}
       {cycle.commitment_rule && <p className="cycle-guide-note"><strong>Your Commitment Rule:</strong> {commitmentRules.find(item => item.key === cycle.commitment_rule)?.label}.</p>}
@@ -134,13 +127,14 @@ export function ArchitectCycle({ initialGoalId = "", chooseAnother = false }: { 
       <p className="cycle-guide-stage">{["choose", "success", "steps", "commitment"].indexOf(stage) + 1} of 4 · A short conversation, then a real plan</p>
       {stage === "choose" && <>
         <h2 ref={heading} tabIndex={-1}>What do you want to improve first?</h2>
-        {lastCycle && <div className="cycle-guide-context"><p className="eyebrow">Your next Cycle</p><h3>You finished: {lastCycle.focus}</h3>{lastCycle.outcome && <p>{lastCycle.outcome}</p>}<p>Build on this direction, or choose a different priority below.</p><button className="button secondary" onClick={() => { setFocus(lastCycle.focus); setPillar(lastCycle.pillar_key); setGoalId(lastCycle.goal_id); setSuccess(lastCycle.success_vision ?? ""); setRule(lastCycle.commitment_rule); setSteps(lastCycle.plan_steps?.length ? lastCycle.plan_steps.slice(0, 3) : suggestedSteps(context, lastCycle.pillar_key, lastCycle.focus)); setStage(lastCycle.success_vision ? "steps" : "success"); setMessage(""); }}>Build on this Cycle</button></div>}
+        {lastCycle && <div className="cycle-guide-context"><p className="eyebrow">Your next Cycle</p><h3>You finished: {lastCycle.focus}</h3>{lastCycle.outcome && <p>{lastCycle.outcome}</p>}<p>Build on this direction, or choose a different priority below.</p><button className="button secondary" onClick={() => { setFocus(lastCycle.focus); setPillar(lastCycle.pillar_key); setGoalId(lastCycle.goal_id); setSuccess(lastCycle.success_vision ?? ""); setRule(lastCycle.commitment_rule); setSteps(lastCycle.plan_steps?.length ? lastCycle.plan_steps.slice(0, 3) : suggestedSteps(lastCycle.pillar_key, lastCycle.focus)); setStage(lastCycle.success_vision ? "steps" : "success"); setMessage(""); }}>Build on this Cycle</button></div>}
         {strongest && opportunity && <p>Your strongest area is <strong>{strongest.label}</strong>. Your Blueprint suggests <strong>{opportunity.label}</strong> has the most room to grow. Does that fit what matters to you right now?</p>}
-        {opportunity && <button className="cycle-guide-choice recommended" onClick={() => choose(opportunity.label, opportunity.key)}><span>Start with my Blueprint recommendation</span><strong>{opportunity.label}</strong></button>}
+        {opportunity && <button className="cycle-guide-choice recommended" onClick={() => choose(opportunity.label, opportunity.key)}><span>Start with my Blueprint recommendation</span><strong>{opportunity.label}</strong><span className="area-choice-meaning">{getAreaGuidance(opportunity.key)?.meaning}</span></button>}{opportunity && <AreaHelp areaKey={opportunity.key} />}
         {activeGoals.length > 0 && <div><h3>Or build on a goal you already chose</h3><div className="cycle-guide-choices">{activeGoals.map(goal => <button key={goal.id} className="cycle-guide-choice" onClick={() => choose(goal.title, goal.pillar_key, goal)}><strong>{goal.title}</strong>{goal.success_vision && <span>{goal.success_vision}</span>}</button>)}</div></div>}
-        <details className="cycle-guide-details" open={chooseAnother || undefined}><summary>Choose a different part of my life</summary><div className="cycle-guide-choices">{architectSections.map(area => <button key={area.key} className="cycle-guide-choice" onClick={() => choose(area.label, area.key)}>{area.label}</button>)}</div></details>
+        <details className="cycle-guide-details" open={chooseAnother || undefined}><summary>Choose a different part of my life</summary><div className="cycle-guide-choices">{architectSections.map(area => <button key={area.key} className="cycle-guide-choice" onClick={() => choose(area.label, area.key)}><strong>{area.label}</strong><span className="area-choice-meaning">{getAreaGuidance(area.key)?.meaning}</span></button>)}</div></details>
         <form onSubmit={event => { event.preventDefault(); choose(focus, null); }}><label className="cycle-guide-field">Something else is more important<input value={focus} maxLength={240} onChange={event => setFocus(event.target.value)} placeholder="For example: make room for my career change" /></label><button className="button secondary" disabled={!focus.trim()}>Use my own priority</button></form>
       </>}
+      {stage !== "choose" && <AreaHelp areaKey={resolveAreaKey(pillar, focus)} actionable />}
       {stage === "success" && <form onSubmit={event => { event.preventDefault(); if (success.trim()) setStage("steps"); }}>
         <p className="cycle-guide-note">Your direction: <strong>{focus}</strong></p><h2 ref={heading} tabIndex={-1}>What would noticeably improve in two weeks?</h2><p>Choose a small sign of progress you would recognize. You don&apos;t have to solve everything in one Cycle.</p>
         <label className="cycle-guide-field">I&apos;ll know this is helping when…<input value={success} onChange={event => setSuccess(event.target.value)} maxLength={600} required placeholder={pillar === "environment" ? "I can start important work without searching for what I need" : pillar === "energy" ? "I have a wind-down routine that fits my evenings" : "I can point to one useful change in my daily life"} /></label>
@@ -148,7 +142,7 @@ export function ArchitectCycle({ initialGoalId = "", chooseAnother = false }: { 
       </form>}
       {stage === "steps" && <>
         <p className="cycle-guide-note">Your direction: <strong>{focus}</strong><br />What success looks like: {success}</p><h2 ref={heading} tabIndex={-1}>Let&apos;s make the first step doable.</h2><p>Here&apos;s a starting suggestion. Keep it, make it more specific, or replace it. One useful action is enough; add up to three if that is realistic.</p>
-        <ol className="cycle-guide-step-list">{steps.map((step, index) => <li key={index}><div className="cycle-guide-step-body">{editingStep === index ? <label className="cycle-guide-field">Step {index + 1}<input autoFocus value={step} onChange={event => setSteps(current => current.map((value, position) => position === index ? event.target.value : value))} maxLength={500} placeholder="A concrete action I can do today" /><button className="cycle-guide-text" type="button" disabled={!step.trim()} onClick={() => setEditingStep(null)}>Keep this step</button></label> : <p>{step || "Choose your next small action"}</p>}<div className="cycle-guide-mini-actions"><button className="cycle-guide-text" onClick={() => setEditingStep(index)}>Edit</button><button className="cycle-guide-text" onClick={() => { const options = suggestions[pillar ?? ""] ?? ["Protect a 10-minute window today and use it for one small action toward your priority."]; const next = options.find(option => !steps.includes(option)); setSteps(current => current.map((value, position) => position === index ? next ?? "" : value)); if (!next) setEditingStep(index); }}>Try another idea</button>{steps.length > 1 && <button className="cycle-guide-text" onClick={() => { setSteps(current => current.filter((_, position) => position !== index)); setEditingStep(null); }}>Remove step {index + 1}</button>}</div></div></li>)}</ol>
+        <ol className="cycle-guide-step-list">{steps.map((step, index) => <li key={index}><div className="cycle-guide-step-body">{editingStep === index ? <label className="cycle-guide-field">Step {index + 1}<input autoFocus value={step} onChange={event => setSteps(current => current.map((value, position) => position === index ? event.target.value : value))} maxLength={500} placeholder="A concrete action I can do today" /><button className="cycle-guide-text" type="button" disabled={!step.trim()} onClick={() => setEditingStep(null)}>Keep this step</button></label> : <p>{step || "Choose your next small action"}</p>}<div className="cycle-guide-mini-actions"><button className="cycle-guide-text" onClick={() => setEditingStep(index)}>Edit</button><button className="cycle-guide-text" onClick={() => { const options = suggestions[resolveAreaKey(pillar, focus) ?? ""] ?? ["Protect a 10-minute window today and use it for one small action toward your priority."]; const next = options.find(option => !steps.includes(option)); setSteps(current => current.map((value, position) => position === index ? next ?? "" : value)); if (!next) setEditingStep(index); }}>Try another idea</button>{steps.length > 1 && <button className="cycle-guide-text" onClick={() => { setSteps(current => current.filter((_, position) => position !== index)); setEditingStep(null); }}>Remove step {index + 1}</button>}</div></div></li>)}</ol>
         {steps.length < 3 && <button className="button secondary" onClick={() => { setEditingStep(steps.length); setSteps(current => [...current, ""]); }}>Add a step · {steps.length}/3</button>}
         <div className="cycle-guide-actions"><button className="button" disabled={!steps.length || steps.some(step => !step.trim())} onClick={() => { setEditingStep(null); setStage("commitment"); }}>Use these steps</button><button className="button secondary" onClick={() => setStage("success")}>Adjust my outcome</button><button className="cycle-guide-text" onClick={() => setStage("choose")}>Change direction</button></div>
       </>}
