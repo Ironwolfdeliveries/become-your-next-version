@@ -1,4 +1,4 @@
-import { Button, PageHero } from "@/components/ui";
+import { Button, MemberHeader as PageHero } from "@/components/ui";
 import { membershipTiers, type MembershipTier } from "@/lib/membership";
 import { BYNV_CONTACT_EMAIL } from "@/lib/contact";
 import { createClient } from "@/lib/supabase/server";

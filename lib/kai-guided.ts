@@ -251,7 +251,7 @@ function nextStep(context: KaiMemberContext): GuidedKaiResult {
   }
   if (context.dailyFocus?.completed || context.dailyFocus?.check_in === "done" || (todaySteps.length && !openStep)) {
     const count = context.progress.actionsThisWeek;
-    return { answer: `Today’s plan is complete.${typeof count === "number" ? ` That’s ${count} completed ${count === 1 ? "action" : "actions"} in the last seven days.` : ""} You can call today done. A note is optional. When you return, we’ll continue from your saved Cycle and progress.`, nextAction: { href: "/progress", label: "See my progress" } };
+    return { answer: `Today’s plan is complete.${typeof count === "number" ? ` That’s ${count} completed ${count === 1 ? "action" : "actions"} in the last seven days.` : ""} You can call today done. A note is optional. When you return, we’ll continue from your saved Cycle and progress.`, nextAction: { href: "/momentum", label: "See my momentum" } };
   }
   if (cycle?.focus) {
     const action = (cycle.remaining_steps ?? cycle.plan_steps)?.find(step => step.trim());
@@ -264,9 +264,7 @@ function nextStep(context: KaiMemberContext): GuidedKaiResult {
   if (goal?.title) {
     return { answer: `Your active goal “${goal.title}” is a useful anchor.${goal.success_vision ? ` Success would look like: “${goal.success_vision}”.` : ""} Let’s build a short Cycle around it, then choose one concrete step for today.`, nextAction: { href: "/architect-cycle", label: "Build my 14-day Cycle" }, aiHandoff: buildPrompt("turn an active goal into a practical action plan", context, goal.title) };
   }
-  const priority = firstText(context.blueprint.priorities);
-  const blueprintAction = firstText(context.blueprint.first_actions);
-  return { answer: priority ? `Your Blueprint suggests “${priority}” as a starting point.${blueprintAction ? ` One useful first move is “${blueprintAction}”.` : ""} You can begin there or choose something more important to you. Let’s turn that choice into a short Cycle.` : `Choose what you want to improve, then build a realistic 14-day plan with Kai.`, nextAction: { href: "/architect-cycle", label: "Choose my first Cycle" } };
+  return { answer: "What would you genuinely like to be different? Choose your own direction first. Your Blueprint can help if you want ideas; it does not choose for you.", nextAction: { href: "/architect-cycle", label: "Choose my first Cycle" } };
 }
 
 function versionScore(context: KaiMemberContext): GuidedKaiResult {
@@ -288,10 +286,8 @@ function versionScore(context: KaiMemberContext): GuidedKaiResult {
 
 function goalHelp(context: KaiMemberContext): GuidedKaiResult {
   const goal = active(context.goals);
-  const priority = firstText(context.blueprint?.priorities);
   if (!goal?.title) {
-    const anchor = priority ? ` Your Blueprint suggests starting with “${priority}.”` : "";
-    return { answer: `You do not have an active saved goal yet.${anchor} Define an outcome you can recognize, choose the part of your life it affects, and choose the first action small enough to begin this week.`, nextAction: { href: "/goals", label: "Create an Architect Goal" }, aiHandoff: buildPrompt("clarify a meaningful goal and turn it into milestones", context, priority) };
+    return { answer: "What would you genuinely like to be different? Start with what matters to you. We can work out how to recognize progress and choose a manageable first step together.", nextAction: { href: "/goals", label: "Choose my own goal" } };
   }
   return { answer: `Start with your active goal: “${goal.title}.” Check that it names an observable outcome, then choose one milestone and one action you can complete next. Keep the goal yours; use AI only to organize possibilities, surface obstacles, or draft a plan for your review.`, nextAction: { href: "/goals", label: "Review my goal" }, aiHandoff: buildPrompt("turn my goal into milestones, obstacles, and next actions", context, goal.title) };
 }
@@ -308,7 +304,7 @@ function progress(context: KaiMemberContext): GuidedKaiResult {
     `${context.progress.completedCycleCount} completed Architect Cycle${context.progress.completedCycleCount === 1 ? "" : "s"}`,
   ];
   if (context.architectAssessment?.status === "completed") facts.splice(1, 0, "a completed Architect Assessment");
-  return { answer: `Here is the progress BYNV can confirm from your saved records: ${facts.join(", ")}.\n\nThis is a factual activity summary, not proof that every part of life improved. Use Progress to compare saved evidence over time and decide what to keep, change, or stop.`, nextAction: { href: "/progress", label: "Review my progress" } };
+  return { answer: `Here is the progress BYNV can confirm from your saved records: ${facts.join(", ")}.\n\nThis is a factual activity summary, not proof that every part of life improved. Use Momentum to compare saved evidence over time and decide what to keep, change, or stop.`, nextAction: { href: "/momentum", label: "Review my progress" } };
 }
 
 function buildPrompt(task: string, context: KaiMemberContext, focus = ""): GuidedKaiResult["aiHandoff"] {
@@ -345,11 +341,13 @@ export function buildGuidedKaiResponse(args: { message: string; intent?: string;
   if (args.context === null && /next|today|daily|goal|progress|my (?:version )?score|my blueprint|missed|commitment/.test(text)) {
     return { answer: "I don’t have your saved journey available right now. Open your dashboard to sign in or retry loading it. I can still explain how this page works, but I won’t guess what you’ve completed.", nextAction: { href: "/dashboard", label: "Open my dashboard" } };
   }
+  if (/examples|ideas|i.?m stuck|not sure what (to choose|i want)/.test(text)) return { answer: "This could involve health, work, relationships, organization, money habits, confidence, finishing something you delayed, or something completely different. What matters to you?", nextAction: {href:"/goals",label:"Choose my own direction"} };
   if (/explain this|this page|what is this section/.test(text)) return explainPage(args.page);
   if (/version score|my score|strongest|opportunity area/.test(text)) return versionScore(context);
   if (/what should i do next|next action|next step/.test(text)) return nextStep(context);
   if (/daily guidance|today|daily focus|made progress|got it done|missed|didn[’']?t happen|make it smaller|reschedule|recommit|got in the way|commitment rule/.test(text)) return dailyGuidance(context);
-  if (/progress|history|how am i doing/.test(text)) return progress(context);
+  if (/show the change|evidence|finish (my )?(cycle|goal)|complete (my )?(cycle|goal)/.test(text)) return { answer: "What is different now, and what can you point to that shows it? A short answer is enough, including no clear change yet. Open your saved plan for its starting intention and the brief review.", nextAction: {href: /goal/.test(text) ? "/goals" : "/architect-cycle", label: "Show the change"} };
+  if (/momentum|progress|history|how am i doing/.test(text)) return progress(context);
   if (/goal/.test(text) && !/page/.test(text)) return goalHelp(context);
   if (/use ai|ai prompt|copy prompt|handoff|brainstorm|research|draft|learn a skill|break .* into steps|analy[sz]e options|routine/.test(text)) return aiPrompt(args.message, context);
   return {

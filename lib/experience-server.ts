@@ -3,18 +3,19 @@ import { createClient } from "@/lib/supabase/server";
 import { memberDate, needsRecovery, type BlueprintArea, type Cycle, type DailyEntry, type Experience, type Goal } from "@/lib/experience";
 
 const dailyColumns = "id,focus_date,priority,action,completed,reflection,steps,check_in,recovery,cycle_id,updated_at";
-const cycleColumns = "id,focus,starts_on,ends_on,status,outcome,success_vision,plan_steps,commitment_rule,pillar_key,goal_id,completed_at,updated_at";
+const cycleColumns = "id,focus,starts_on,ends_on,status,outcome,success_vision,plan_steps,commitment_rule,pillar_key,goal_id,completed_at,updated_at,personal_reward,custom_rule,change_review,review_history";
 
 export async function getExperience(userId: string): Promise<Experience> {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user || user.id !== userId) throw new Error("Sign in to continue your plan.");
-  const [profile, assessment, cycles, goals] = await Promise.all([
+  const [profile, assessmentHistory, cycles, goals] = await Promise.all([
     supabase.from("profiles").select("display_name,onboarding_completed,timezone").eq("id", userId).single(),
-    supabase.from("architect_assessments").select("id,version_score,section_results").eq("user_id", userId).eq("status", "completed").order("completed_at", { ascending: false }).order("version", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("architect_assessments").select("id,version_score,section_results,completed_at").eq("user_id", userId).eq("status", "completed").order("completed_at", { ascending: false }).order("version", { ascending: false }).limit(2),
     supabase.from("architect_cycles").select(cycleColumns).eq("user_id", userId).order("created_at", { ascending: false }),
-    supabase.from("goals").select("id,title,pillar_key,status,target_date,success_vision,commitment_rule,advanced_at").eq("user_id", userId).neq("status", "archived").order("created_at", { ascending: false }),
+    supabase.from("goals").select("id,title,pillar_key,status,target_date,success_vision,commitment_rule,advanced_at,motivation,personal_reward,custom_rule,change_review,review_history,updated_at").eq("user_id", userId).neq("status", "archived").order("created_at", { ascending: false }),
   ]);
+  const assessment = { data: assessmentHistory.data?.[0] ?? null, error: assessmentHistory.error };
   if ([profile, assessment, cycles, goals].some(result => result.error)) throw new Error("Your saved journey could not be loaded. Please try again.");
   const blueprint = assessment.data
     ? await supabase.from("architect_blueprints").select("strengths,priorities,first_actions").eq("user_id", userId).eq("assessment_id", assessment.data.id).maybeSingle()
@@ -39,6 +40,8 @@ export async function getExperience(userId: string): Promise<Experience> {
     today, timezone, name: profile.data?.display_name?.trim().split(/\s+/)[0] || "Architect",
     orientationComplete: Boolean(profile.data?.onboarding_completed),
     assessmentComplete: Boolean(assessment.data), score: assessment.data?.version_score ?? null,
+    assessmentChange: assessmentHistory.data?.length === 2 ? assessmentHistory.data[0].version_score - assessmentHistory.data[1].version_score : null,
+    assessmentDate: assessment.data?.completed_at ? memberDate(timezone, new Date(assessment.data.completed_at)) : null,
     strengths: (blueprint.data?.strengths ?? []) as BlueprintArea[],
     priorities: (blueprint.data?.priorities ?? []) as BlueprintArea[],
     firstActions: (blueprint.data?.first_actions ?? []) as Experience["firstActions"],

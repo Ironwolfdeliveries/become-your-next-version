@@ -340,6 +340,7 @@ for (const route of [
   "/challenges",
   "/architect-cycle",
   "/progress",
+  "/momentum",
   "/community",
   "/membership",
 ]) {
@@ -362,7 +363,9 @@ const customCycle: KaiMemberContext = {
 const guided = (saved: KaiMemberContext | null, message = "What should I do next?") =>
   buildGuidedKaiResponse({ message, page, context: saved, assessmentMode: false });
 const freshBlueprint = guided({ ...customCycle, architectCycles: [], goals: [] });
-assert.match(freshBlueprint.answer, /Take a ten-minute walk/, "Blueprint action objects must be interpreted as actions, not internal keys");
+assert.match(freshBlueprint.answer, /What would you genuinely like to be different/);
+assert.doesNotMatch(freshBlueprint.answer, /ten-minute walk/);
+assert.match(guided({ ...customCycle, architectCycles: [], goals: [] }, "I need examples").answer, /or something completely different/);
 const careerNext = guided(customCycle);
 assert.match(careerNext.answer, /Update one paragraph of my résumé/);
 assert.doesNotMatch(careerNext.answer, /ten-minute walk|morning routine/);

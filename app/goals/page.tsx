@@ -5,5 +5,5 @@ export const metadata = { title: "Your Goals", description: "Choose a meaningful
 export const dynamic = "force-dynamic";
 export default async function GoalsPage() {
   const user = await requireUser("/goals");
-  return <><PageHero eyebrow="Your goals" title="Give your next version a direction." copy="Choose what you want to change. Kai helps you turn it into a few realistic steps." /><div className="container member-page"><GoalsWorkspace userId={user.id} /></div></>;
+  return <><PageHero eyebrow="Your goals" title="What would you like to be different?" copy="Choose what you want to change. Kai helps you turn it into a few realistic steps." /><div className="container member-page"><GoalsWorkspace userId={user.id} /></div></>;
 }

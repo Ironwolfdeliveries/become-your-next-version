@@ -26,6 +26,7 @@ export function recommendPlan(experience: Experience, selectedPriority: string) 
     if (saved.length && !actions.length) actions = [`Review what changed in “${cycle.focus}” and choose one useful next step for the rest of this Cycle.`];
   } else if (experience.goals.some(item => item.status === "active" && clean(item.title.slice(0, 200)) === clean(priority))) {
     source = "From your active goal";
+    actions = [`Choose one task that would move “${priority}” forward, then spend 10 minutes starting it.`];
   } else if (areaKey) source = "A starting point from your Blueprint";
   // Improve new recommendations only. Never rewrite a member's saved steps or Blueprint.
   if (!actions.length) actions = [guide?.actions[0] ?? `Choose one task that would move “${priority}” forward, then spend 10 minutes starting it.`];
