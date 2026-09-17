@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { KaiPrompt } from "@/components/kai-prompt";
 import { KaiPersonalContext } from "@/components/kai-personal-context";
 import { KaiDemo } from "@/components/kai-demo";
@@ -16,7 +17,7 @@ export default function Kai() {
         title="Your guide to becoming your next version."
         copy="Kai connects your saved plans and progress. Ask a question or choose a next step together."
       />
-      <KaiPersonalContext />
+      <KaiPersonalContext /><section className="container kai-capabilities"><Link className="button secondary" href="/next-version-reset">Find my next step with a Next Version Reset</Link></section>
       <section className="container kai-capabilities"><KaiPrompt prompt="What should I do next?">Help me choose my next step</KaiPrompt><KaiPrompt prompt="Explain this page">Explain this simply</KaiPrompt></section>
       <details className="container"><summary>How Kai helps, examples, and boundaries</summary>
       <section className="kai-identity container" aria-labelledby="kai-meaning">

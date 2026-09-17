@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 export default function robots(): MetadataRoute.Robots {
-  return { rules: { userAgent: "*", allow: "/", disallow: ["/admin/", "/dashboard", "/account", "/journal", "/api/"] }, sitemap: `${SITE_URL}/sitemap.xml`, host: SITE_URL };
+  return { rules: { userAgent: "*", allow: "/", disallow: ["/admin/", "/dashboard", "/account", "/journal", "/api/", "/next-version-reset"] }, sitemap: `${SITE_URL}/sitemap.xml`, host: SITE_URL };
 }

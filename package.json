@@ -12,7 +12,7 @@
     "test:journey": "node --experimental-strip-types test/journey.test.ts",
     "test:guided-kai": "node --experimental-strip-types test/guided-kai.test.ts",
     "test:billing-gate": "node --experimental-strip-types test/billing-gate.test.ts && node --experimental-strip-types test/billing-access.test.ts",
-    "test:experience": "node --experimental-strip-types test/experience.test.ts && node --experimental-strip-types test/library-access.test.ts && node --experimental-strip-types test/assessment-contract.test.ts && node --experimental-strip-types test/area-guidance.test.ts && node --experimental-strip-types test/momentum.test.ts"
+    "test:experience": "node --experimental-strip-types test/experience.test.ts && node --experimental-strip-types test/library-access.test.ts && node --experimental-strip-types test/assessment-contract.test.ts && node --experimental-strip-types test/area-guidance.test.ts && node --experimental-strip-types test/momentum.test.ts && node --experimental-strip-types test/next-version-reset.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

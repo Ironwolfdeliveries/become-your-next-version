@@ -20,6 +20,7 @@ type KaiPageContext = {
 };
 
 const pageContexts: Record<string, KaiPageContext> = {
+  "/next-version-reset": { title: "Next Version Reset", purpose: "A brief, optional reflection that gathers your own words and helps you choose one next action. Save only what you choose; this is not therapy.", recommendation: { href: "/next-version-reset", label: "Continue my Reset" } },
   "/": { title: "BYNV home", purpose: "An introduction to Become Your Next Version and the Architect Method.", recommendation: { href: "/assessment", label: "Begin the free assessment" } },
   "/mission": { title: "Mission", purpose: "The purpose and principles behind BYNV.", recommendation: { href: "/framework", label: "Explore the Architect Method" } },
   "/framework": { title: "Architect Method", purpose: "The BYNV system for seeing clearly, choosing a direction, taking action, and reviewing progress.", recommendation: { href: "/assessment", label: "Apply it in the assessment" } },

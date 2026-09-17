@@ -36,6 +36,7 @@ jobs:
           node test/interaction/build.mjs
           node test/interaction/run.mjs
           node test/interaction/guidance.mjs
+          node test/interaction/reset.mjs
 
       - name: Verify database preservation and accountability
         run: |
