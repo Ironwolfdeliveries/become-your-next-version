@@ -1,0 +1,6 @@
+import Link from "next/link";
+import { entryGuides } from "@/lib/entry-guides";
+import { SITE_URL } from "@/lib/site";
+import "./start.css";
+export const metadata = { title: "Find a practical starting point", description: "Free BYNV exercises for feeling stuck, starting over, and finishing a project. Choose what fits your situation and try one useful action.", alternates: { canonical: `${SITE_URL}/start` } };
+export default function StartPage() { return <section className="container start-guides"><p className="eyebrow">Free BYNV guides</p><h1>Start where you are.</h1><p className="lede">Choose what sounds familiar. Each guide offers an exercise you can use without an account.</p><div className="start-grid">{entryGuides.map(g => <article key={g.slug}><h2><Link href={`/start/${g.slug}`}>{g.title}</Link></h2><p>{g.description}</p><Link className="command-link" href={`/start/${g.slug}`}>Try the exercise →</Link></article>)}</div><aside><h2>Want a wider starting point?</h2><p>The free, six-question Version Snapshot helps you reflect on where you are. Kai explains the result; you choose what to explore next.</p><Link className="button" href="/assessment">Take my free Version Snapshot</Link></aside></section>; }

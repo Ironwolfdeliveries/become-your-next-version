@@ -23,6 +23,8 @@ try {
   await db.exec(readFileSync(root+'/supabase/migrations/20260917012747_momentum_personalization.sql','utf8'));
   const checks=await db.exec(readFileSync(root+'/docs/momentum-verification.sql','utf8'));
   for(const result of checks) if(result.rows?.length) console.log(JSON.stringify(result.rows));
+  const resetChecks=await db.exec(readFileSync(root+'/docs/reset-verification.sql','utf8'));
+  for(const result of resetChecks) if(result.rows?.length) console.log(JSON.stringify(result.rows));
   const count=await db.query('select count(*)::integer as remaining_test_users from auth.users');
   console.log(JSON.stringify(count.rows));
 } catch(error) { console.error(error); process.exitCode=1; }
