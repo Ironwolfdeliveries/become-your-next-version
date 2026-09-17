@@ -56,7 +56,7 @@ export default async function BlueprintPage() {
       </div>
     </section>
     <div className="container blueprint-layout">
-      <section className="blueprint-score"><p className="eyebrow">Saved Version Score</p><strong>{assessment.version_score ?? "—"}<span>/100</span></strong><p>A starting point to compare over time. Your saved result stays intact when you take a new assessment.</p><Button href="/progress" secondary>See my progress</Button></section>
+      <section className="blueprint-score"><p className="eyebrow">Saved Version Score</p><strong>{assessment.version_score ?? "—"}<span>/100</span></strong><p>A starting point to compare over time. Your saved result stays intact when you take a new assessment.</p><Button href="/momentum" secondary>See my momentum</Button></section>
       <section className="blueprint-section"><p className="eyebrow">Your seven areas</p><h2>A clearer picture.</h2><div className="signal-list">{sections.map((item) => <article key={item.key}><div><strong>{item.label}</strong><AreaHelp areaKey={item.key} /></div><span>{item.score}/100</span></article>)}</div></section>
       <section className="blueprint-section blueprint-actions">
         <p className="eyebrow">Put it to work</p><h2>One small step is enough to begin.</h2>

@@ -7,6 +7,7 @@ import {
   loadExperience, momentum,
   type CheckIn, type DailyEntry, type Experience, type PlanStep, type Recovery,
 } from "@/lib/experience";
+import { recoveryReasons } from "@/lib/momentum";
 import { AILeverageAudit } from "./ai-leverage-audit";
 import { KaiAvatar } from "./kai-avatar";
 import { KaiPrompt } from "./kai-prompt";
@@ -27,6 +28,7 @@ function RecoveryCard({ entry, experience, disabled, hasUnsavedChanges, onRecove
   const [nextAction, setNextAction] = useState(original.slice(0, 1000));
   const [nextDate, setNextDate] = useState(entry.focus_date === experience.today ? addDays(experience.today, 1) : experience.today);
   const [blocker, setBlocker] = useState("");
+  const [reason, setReason] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const lock = useRef(false);
@@ -38,10 +40,10 @@ function RecoveryCard({ entry, experience, disabled, hasUnsavedChanges, onRecove
   }
   async function recover(event: FormEvent) {
     event.preventDefault();
-    if (!strategy || disabled || lock.current || !nextAction.trim()) return;
+    if (!strategy || !reason || disabled || lock.current || !nextAction.trim()) return;
     lock.current = true; setPending(true); onPending(true); setMessage("Saving your next step…");
     try {
-      await changeExperience({ action: "recover", entry_id: entry.id, strategy, next_date: nextDate,
+      await changeExperience({ action: "recover", entry_id: entry.id, reason, strategy, next_date: nextDate,
         next_action: nextAction.trim(), blocker: blocker.trim() || undefined, expected_updated_at: entry.updated_at });
       setMessage("Your next step is saved. Updating your plan…");
       await onRecovered();
@@ -50,23 +52,25 @@ function RecoveryCard({ entry, experience, disabled, hasUnsavedChanges, onRecove
     } finally { setPending(false); onPending(false); lock.current = false; }
   }
   return <article className="today-recovery-card">
-    <p className="eyebrow">{entry.focus_date === experience.today ? "Let’s adjust" : `Still open · ${readableDate(entry.focus_date)}`}</p>
+    <p className="eyebrow">Recovery Check-In · {readableDate(entry.focus_date)}</p>
     <h3>{entry.priority || "One commitment to return to"}</h3>
     <ul>{entrySteps(entry).filter(step => !step.done).map(step => <li key={step.id}>{step.text}</li>)}</ul>
     {entry.reflection && <details className="today-details"><summary>Your saved note</summary><p className="today-preserved-note">{entry.reflection}</p></details>}
     <p className="today-muted">{entryStatus(entry) === "progress" ? "You made progress. Let’s give the remaining step a clear next move." : "We can work with what happened. What would help you move forward?"}</p>
-    {rule && <p className="today-rule">Your commitment rule: {rule.label}.</p>}
-    <div className="today-recovery-choices" role="group" aria-label={`Adjust your ${readableDate(entry.focus_date)} action`}>
-      {([ ["keep", "Keep the action"], ["shrink", "Make it smaller"], ["reschedule", "Reschedule it"], ["replace", "Another approach"] ] as const).map(([key, label]) =>
+    {(rule || experience.cycles.find(c => c.id === entry.cycle_id)?.custom_rule) && <p className="today-rule">Your chosen response: {experience.cycles.find(c => c.id === entry.cycle_id)?.custom_rule || rule?.label}.</p>}
+    <p>You planned this, and there’s still an unfinished step. It matters, and your goal is still here. What got in the way?</p>
+    <div className="today-recovery-choices" role="group" aria-label="What got in the way?">{recoveryReasons.map(item => <button type="button" key={item} aria-pressed={reason === item} disabled={disabled || pending} onClick={() => setReason(item)}>{item}</button>)}</div>
+    {reason && <div className="today-recovery-choices" role="group" aria-label={`Adjust your ${readableDate(entry.focus_date)} action`}>
+      {([ ["keep", "Keep the action"], ["shrink", "Make it smaller"], ["reschedule", "Move it"], ["replace", "Another approach"] ] as const).map(([key, label]) =>
         <button type="button" key={key} aria-pressed={strategy === key} disabled={disabled || pending} onClick={() => choose(key)}>{label}</button>)}
-    </div>
+    </div>}
     {hasUnsavedChanges && <p className="field-help">Save your changes to today’s plan before adjusting an earlier commitment.</p>}
     {strategy && <form className="today-recovery-form" onSubmit={recover}>
       <label>Next action<textarea value={nextAction} onChange={event => setNextAction(event.target.value)} maxLength={1000} rows={2} required disabled={pending || disabled} placeholder="What is one different, doable step?" /></label>
       <label>When will you take it?<input type="date" min={experience.today} value={nextDate} onChange={event => setNextDate(event.target.value)} required disabled={pending || disabled} /></label>
       <details className="today-details"><summary>What got in the way? <span>Optional</span></summary><label><span className="sr-only">What got in the way?</span><textarea value={blocker} onChange={event => setBlocker(event.target.value)} maxLength={1000} rows={2} disabled={pending || disabled} placeholder="Time, energy, unclear next step…" /></label></details>
       <p className="field-help">This gives this day’s unfinished plan one next move. All original steps stay in your history. The next move is added to the day you choose.</p>
-      <button className="button" disabled={disabled || pending || !nextAction.trim()}>{pending ? "Saving…" : "Save my next step"}</button>
+      <button className="button" disabled={disabled || pending || !reason || !nextAction.trim()}>{pending ? "Saving…" : "Save my next step"}</button>
     </form>}
     <p className="form-message" role="status">{message}</p>
   </article>;
@@ -221,7 +225,7 @@ export function DailyFocus() {
     {unresolved.length > 0 && <section id={todayRecovery ? undefined : "recovery"} className="today-recovery" aria-labelledby="open-commitments-title"><div className="today-card-heading"><div><p className="eyebrow">A clear way back</p><h2 id="open-commitments-title">Let’s close the loop.</h2></div><span>{unresolved.length} still open</span></div><p className="today-muted">These saved actions are still here. Choose one next move for each unfinished plan.</p>
       {unresolved.map(entry => <RecoveryCard key={`${entry.id}-${entry.updated_at}`} entry={entry} experience={experience} disabled={disabled || dirty} hasUnsavedChanges={dirty} onRecovered={afterRecovery} onPending={setPending} />)}
     </section>}
-    <div className="today-bottom"><Link className="button secondary" href="/dashboard">Back to my dashboard</Link><Link href="/progress">See my progress →</Link></div>
+    <div className="today-bottom"><Link className="button secondary" href="/dashboard">Back to my dashboard</Link><Link href="/momentum">See my momentum →</Link></div>
     <details className="today-details today-support"><summary>Want help making room for your next step?</summary><AILeverageAudit priority={priority} action={steps.map(step => step.text).join("; ")} /></details>
   </div>;
 }

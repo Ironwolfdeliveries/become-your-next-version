@@ -43,7 +43,7 @@ describe("existing Daily Focus entries remain meaningful", () => {
     const state = experience({ daily: saved, recent: [saved] });
     assert.deepEqual(entrySteps(saved), [{ id: "legacy", text: saved.action, done: true }]);
     assert.equal(entryStatus(saved), "done");
-    assert.equal(nextExperienceStep(state).href, "/progress");
+    assert.equal(nextExperienceStep(state).href, "/momentum");
     assert.deepEqual(saved, original);
     assert.equal(state.score, 59);
   });
@@ -161,8 +161,8 @@ describe("Kai connects the next step to what the member has actually saved", () 
   it("orients a newly completed member and reuses their Blueprint areas", () => {
     const next = nextExperienceStep(experience({ orientationComplete: false }));
     assert.equal(next.href, "/orientation");
-    assert.match(next.message, /Clarity & Direction/);
-    assert.match(next.message, /Environment & Systems/);
+    assert.match(next.message, /What would you genuinely like to be different/);
+    assert.match(next.message, /Blueprint can help/);
   });
   it("invites a first priority after orientation when there is no existing work", () => {
     assert.equal(nextExperienceStep(experience()).href, "/architect-cycle");
@@ -202,7 +202,7 @@ describe("Kai connects the next step to what the member has actually saved", () 
   it("celebrates action count when today is complete", () => {
     const saved = entry({ steps: completedSteps, check_in: "done", completed: true });
     const next = nextExperienceStep(experience({ daily: saved, recent: [saved] }));
-    assert.equal(next.href, "/progress");
+    assert.equal(next.href, "/momentum");
     assert.match(next.message, /3 actions completed/);
   });
   it("reopens a missed commitment with its actual action and recovery choices", () => {

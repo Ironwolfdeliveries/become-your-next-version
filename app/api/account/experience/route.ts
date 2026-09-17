@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getExperience } from "@/lib/experience-server";
+import { validReview, recoveryReasons, safePersonalChoice } from "@/lib/momentum";
 import { commitmentRules } from "@/lib/experience";
 
 export const dynamic = "force-dynamic";
@@ -29,18 +30,27 @@ function validate(body: Record<string, unknown>): Record<string, unknown> {
     return { action, date: date(body.date), priority: text(body.priority, "today’s priority", 200), steps, check_in: body.check_in, reflection: text(body.reflection, "your note", 2000), expected_updated_at: version(body.expected_updated_at), cycle_id: nullableId(body.cycle_id, "your cycle") };
   }
   if (action === "recover") {
+    if (!recoveryReasons.some(reason => reason === body.reason)) throw new InputError("Choose what got in the way.");
     if (!["keep", "shrink", "reschedule", "replace"].includes(String(body.strategy))) throw new InputError("Choose how you want to adjust the action.");
     const entryId = nullableId(body.entry_id, "the original action"); if (!entryId) throw new InputError("Choose an action to recover.");
-    return { action, entry_id: entryId, strategy: body.strategy, next_date: date(body.next_date), next_action: text(body.next_action, "your next action", 1000, true), blocker: body.blocker == null ? "" : text(body.blocker, "what got in the way", 1000), expected_updated_at: version(body.expected_updated_at) };
+    return { action, reason: body.reason, entry_id: entryId, strategy: body.strategy, next_date: date(body.next_date), next_action: text(body.next_action, "your next action", 1000, true), blocker: body.blocker == null ? "" : text(body.blocker, "what got in the way", 1000), expected_updated_at: version(body.expected_updated_at) };
   }
   if (action === "start-cycle") {
     if (!Array.isArray(body.plan_steps) || body.plan_steps.length < 1 || body.plan_steps.length > 3) throw new InputError("Choose one to three steps for your cycle.");
     if (body.pillar_key != null && !areas.has(String(body.pillar_key))) throw new InputError("Choose an area of your life.");
-    return { action, focus: text(body.focus, "what you want to improve", 240, true), success_vision: text(body.success_vision, "meaningful progress", 1000, true), plan_steps: body.plan_steps.map(step => text(step, "your plan", 1000, true)), commitment_rule: rule(body.commitment_rule), pillar_key: body.pillar_key ?? null, goal_id: nullableId(body.goal_id, "your goal") };
+    const customRule = body.custom_rule == null ? "" : text(body.custom_rule, "your supportive response", 240);
+    const reward = body.personal_reward == null ? "" : text(body.personal_reward, "your reward", 240);
+    if (!safePersonalChoice(customRule) || !safePersonalChoice(reward)) throw new InputError("Choose a constructive response or reward without harm or penalties.");
+    return { action, custom_rule: customRule, personal_reward: reward, focus: text(body.focus, "what you want to improve", 240, true), success_vision: text(body.success_vision, "meaningful progress", 1000, true), plan_steps: body.plan_steps.map(step => text(step, "your plan", 1000, true)), commitment_rule: rule(body.commitment_rule), pillar_key: body.pillar_key ?? null, goal_id: nullableId(body.goal_id, "your goal") };
   }
-  if (action === "review-cycle") {
+  if (action === "review-cycle" || action === "complete-goal") {
+    if (!validReview(body.change_review)) throw new InputError("Briefly describe the change and evidence. No clear change yet is a valid answer.");
+    if (action === "complete-goal") {
+      const goalId = nullableId(body.goal_id, "your goal"); if (!goalId) throw new InputError("Choose a goal to review.");
+      return { action, goal_id: goalId, change_review: body.change_review, expected_updated_at: version(body.expected_updated_at) };
+    }
     const cycleId = nullableId(body.cycle_id, "your cycle"); if (!cycleId) throw new InputError("Choose a cycle to review.");
-    return { action, cycle_id: cycleId, outcome: text(body.outcome, "your review", 3000), expected_updated_at: version(body.expected_updated_at) };
+    return { action, cycle_id: cycleId, change_review: body.change_review, expected_updated_at: version(body.expected_updated_at) };
   }
   if (action === "orientation") {
     const timezone = body.timezone == null ? "America/New_York" : text(body.timezone, "your timezone", 64, true);
@@ -68,7 +78,7 @@ export async function POST(request: Request) {
     let parsed: unknown; try { parsed = JSON.parse(raw); } catch { throw new InputError("That change could not be read. Please try again."); }
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new InputError("Please check your change.");
     const payload = validate(parsed as Record<string, unknown>);
-    const { error } = await supabase.rpc("bynv_change_experience", { p_payload: payload });
+    const { error } = await supabase.rpc("bynv_change_momentum", { p_payload: payload });
     if (error) {
       if (["40001", "23505", "P0002"].includes(error.code)) return NextResponse.json({ error: error.code === "40001" ? error.message : "Your saved plan changed. Reload it before trying again." }, { status: 409, headers });
       if (["22023", "22P02", "22007", "22008", "23514"].includes(error.code)) return NextResponse.json({ error: error.code === "22023" ? error.message : "Please check your plan and try again." }, { status: 400, headers });

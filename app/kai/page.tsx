@@ -2,7 +2,7 @@ import { KaiPrompt } from "@/components/kai-prompt";
 import { KaiPersonalContext } from "@/components/kai-personal-context";
 import { KaiDemo } from "@/components/kai-demo";
 import Image from "next/image";
-import { PageHero } from "@/components/ui";
+import { MemberHeader as PageHero } from "@/components/ui";
 export const metadata = {
   title: "Meet Kai — Keep Advancing Intentionally",
   description:
@@ -14,8 +14,11 @@ export default function Kai() {
       <PageHero
         eyebrow="MEET KAI"
         title="Your guide to becoming your next version."
-        copy="KAI stands for Keep Advancing Intentionally. Kai uses the BYNV progress and context you choose to save to help you understand where you are, decide what comes next, and keep moving toward the person you're building."
+        copy="Kai connects your saved plans and progress. Ask a question or choose a next step together."
       />
+      <KaiPersonalContext />
+      <section className="container kai-capabilities"><KaiPrompt prompt="What should I do next?">Help me choose my next step</KaiPrompt><KaiPrompt prompt="Explain this page">Explain this simply</KaiPrompt></section>
+      <details className="container"><summary>How Kai helps, examples, and boundaries</summary>
       <section className="kai-identity container" aria-labelledby="kai-meaning">
         <div className="kai-portrait">
           <Image
@@ -38,7 +41,6 @@ export default function Kai() {
         </div>
       </section>
 
-      <KaiPersonalContext />
       <section className="kai-value container" aria-labelledby="kai-roles">
         <header className="section-title">
           <p className="eyebrow">One guide. Three roles.</p>
@@ -115,6 +117,7 @@ export default function Kai() {
           but will never recommend an answer or influence your score.
         </p>
       </section>
+      </details>
     </>
   );
 }

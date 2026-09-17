@@ -1,3 +1,4 @@
+import type { ChangeReview } from "./momentum.ts";
 export const commitmentRules = [
   { key: "recommit", label: "Recommit within 24 hours" },
   { key: "blocker", label: "Tell Kai what blocked me" },
@@ -8,14 +9,15 @@ export const commitmentRules = [
 export type CommitmentRule = typeof commitmentRules[number]["key"];
 export type CheckIn = "done" | "progress" | "missed";
 export type PlanStep = { id: string; text: string; done: boolean };
-export type Recovery = { strategy: "keep" | "shrink" | "reschedule" | "replace"; next_date: string; next_action: string; resolved_at: string; blocker?: string };
+export type Recovery = { strategy: "keep" | "shrink" | "reschedule" | "replace"; next_date: string; next_action: string; resolved_at: string; blocker?: string; reason?: string };
 export type DailyEntry = { id: string; focus_date: string; priority: string | null; action: string | null; completed: boolean; reflection: string | null; steps: PlanStep[] | null; check_in: CheckIn | null; recovery: Recovery | null; cycle_id: string | null; updated_at: string };
-export type Cycle = { id: string; focus: string; starts_on: string; ends_on: string; status: string; outcome: string | null; success_vision: string | null; plan_steps: string[]; commitment_rule: CommitmentRule | null; pillar_key: string | null; goal_id: string | null; completed_at: string | null; updated_at: string };
-export type Goal = { id: string; title: string; pillar_key: string | null; status: string; target_date: string | null; success_vision: string | null; commitment_rule: CommitmentRule | null; advanced_at: string | null };
+export type ReviewRecord = { review: ChangeReview; recorded_at: string };
+export type Cycle = { review_history?: ReviewRecord[] | null; personal_reward?: string | null; custom_rule?: string | null; change_review?: ChangeReview | null; id: string; focus: string; starts_on: string; ends_on: string; status: string; outcome: string | null; success_vision: string | null; plan_steps: string[]; commitment_rule: CommitmentRule | null; pillar_key: string | null; goal_id: string | null; completed_at: string | null; updated_at: string };
+export type Goal = { review_history?: ReviewRecord[] | null; motivation?: string | null; personal_reward?: string | null; custom_rule?: string | null; change_review?: ChangeReview | null; updated_at?: string; id: string; title: string; pillar_key: string | null; status: string; target_date: string | null; success_vision: string | null; commitment_rule: CommitmentRule | null; advanced_at: string | null };
 export type BlueprintArea = { key: string; label: string; score: number };
 export type Experience = {
   today: string; timezone: string; name: string; orientationComplete: boolean;
-  assessmentComplete: boolean; score: number | null;
+  assessmentComplete: boolean; score: number | null; assessmentChange?: number | null; assessmentDate?: string | null;
   strengths: BlueprintArea[]; priorities: BlueprintArea[]; firstActions: { key: string; action: string }[];
   cycle: Cycle | null; cycles: Cycle[]; daily: DailyEntry | null; recent: DailyEntry[]; unresolved: DailyEntry[]; goals: Goal[];
 };

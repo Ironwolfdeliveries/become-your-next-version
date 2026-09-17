@@ -30,6 +30,18 @@ jobs:
       - name: Test member experience and existing safeguards
         run: npm test
 
+      - name: Verify page interactions with synthetic members
+        run: |
+          npm ci --prefix test/interaction --no-audit --no-fund
+          node test/interaction/build.mjs
+          node test/interaction/run.mjs
+          node test/interaction/guidance.mjs
+
+      - name: Verify database preservation and accountability
+        run: |
+          npm ci --prefix test/database --no-audit --no-fund
+          node test/database/verify.mjs
+
       - name: Build
         run: npm run build
         env:

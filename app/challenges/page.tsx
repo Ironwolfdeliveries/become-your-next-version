@@ -1,5 +1,5 @@
 import { Challenges } from "@/components/challenges";
-import { PageHero } from "@/components/ui";
+import { MemberHeader as PageHero } from "@/components/ui";
 import { requireUser } from "@/lib/supabase/require-user";
 export const metadata = { title: "Architect Challenges", description: "Practice a focused BYNV behavior for a defined period." };
 export const dynamic = "force-dynamic";
