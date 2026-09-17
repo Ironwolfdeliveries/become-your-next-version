@@ -61,7 +61,7 @@ export function NextVersionReset({ initial }: { initial: Experience }) {
         {initial.cycle && <p><Link className="command-link" href="/architect-cycle">Continue my existing Cycle: {initial.cycle.focus}</Link></p>}
         <nav className="button-row" aria-label="Continue from my Reset"><Link href="/daily-focus">Today’s Plan</Link><Link href="/momentum">See my Momentum</Link><Link href="/journal">My Journal</Link><Link href="/challenges">Explore an optional challenge</Link></nav>
         <p role="status">{busy ? "Saving your choice…" : Object.keys(saved).length ? "Your chosen changes are saved. Check in after your action to see it in Momentum." : "Nothing has been saved yet."}</p>
-        {locked && <p className="command-small">This summary is fixed for safe retries. To explore a different direction, start a new Reset.</p>}
+        {locked && <p className="command-small">Ready to explore a different direction? Start a new Reset.</p>}
         <button className="command-link" disabled={busy} onClick={() => { setAnswers(blankReset()); setSaved({}); ids.current = {}; setLocked(false); setStep(0); setDeeper(false); setError(""); }}>Start a new Reset</button>
       </> : <form onSubmit={e => { e.preventDefault(); advance(); }}>
         <p className="eyebrow">{q.optional ? "Optional reflection" : "Your choice"}</p><h2 ref={heading} tabIndex={-1}><label htmlFor="reset-answer">{q.label}</label></h2>
